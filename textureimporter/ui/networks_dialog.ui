@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>main</class>
+ <widget class="QWidget" name="main">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>848</width>
+    <height>668</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Material Networks</string>
+  </property>
+  <layout class="QVBoxLayout" name="main_lay">
+   <item>
+    <widget class="QTreeWidget" name="materials_tree">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
+     <property name="allColumnsShowFocus">
+      <bool>true</bool>
+     </property>
+     <attribute name="headerShowSortIndicator" stdset="0">
+      <bool>true</bool>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>Material</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Node Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Exists</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>File Name</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="conflict_lay" stretch="0,1">
+     <item>
+      <widget class="QLabel" name="conflict_lbl">
+       <property name="text">
+        <string>On Conflict:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="conflict_cmb">
+       <item>
+        <property name="text">
+         <string>Update Existing Nodes</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Replace Exising Nodes</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Rename Nodes</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="assign_chk">
+     <property name="text">
+      <string>Assign Materials to Selection (Only Applies When Using $mesh)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="footer_lay" stretch="1,0">
+     <item>
+      <widget class="QProgressBar" name="main_prgbar">
+       <property name="value">
+        <number>0</number>
+       </property>
+       <property name="textVisible">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="main_btnbox">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
