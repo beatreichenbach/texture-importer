@@ -1,8 +1,6 @@
 global proc textureimporter_setup() {
-	string $parts[];
-	$num_parts = tokenize(whatIs("textureimporter_setup"), $parts);
-	$cwd = dirname($parts[$num_parts - 1]);
-	$code = "import sys;sys.path.append('" + $cwd + "');import setup_maya;reload(setup_maya);setup_maya.install()";
+	$cwd = dirname(substitute(".+: ", whatIs("textureimporter_setup"), ""));
+	$code = "import sys; sys.path.append('" + $cwd + "'); import setup_maya; setup_maya.install()";
 	python($code);
 }
 textureimporter_setup;

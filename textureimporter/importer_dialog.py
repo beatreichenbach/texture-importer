@@ -139,6 +139,8 @@ class ImporterDialog(QtWidgets.QDialog):
 
         # Update config object
         config = self.config_cmb.itemData(self.config_cmb.findText(name))
+        if not config:
+            config = utils.Config(name)
         config.name = name
         config.renderer = self.renderer_cmb.currentData()
         config.channels = []
@@ -254,8 +256,8 @@ class ImporterDialog(QtWidgets.QDialog):
         dialog.setModal(True)
         result = dialog.exec_()
 
-        if result:
-            super(ImporterDialog, self).accept()
+        # if result:
+        #     super(ImporterDialog, self).accept()
 
     def reject(self):
         self.save_settings()

@@ -69,7 +69,7 @@ class Importer(object):
         return files
 
     def get_selection(self):
-        return []
+        return [(None, None)]
 
     def get_meshes(self):
         # loop through channels and find meshes
@@ -78,7 +78,7 @@ class Importer(object):
                 # call getselection function and return
                 return self.get_selection()
 
-        return [None]
+        return [(None, None)]
 
     def get_materials(self, mesh):
         channels = self.config.channels
