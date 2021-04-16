@@ -18,73 +18,28 @@ class NetworksDialog(QtWidgets.QDialog):
     def init_ui(self):
         load_ui(self, 'networks_dialog.ui')
 
-        self.materials_tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.materials_tree.customContextMenuRequested.connect(self.context_menu)
+        placeholder = self.networks_tree
+        self.networks_tree = NetworksTreeWidget(self.networks_tree)
+        self.networks_tree.setHeaderLabels(('Material', 'Node Name', 'Exists', 'File Name'))
+        self.networks_tree.setSortingEnabled(True)
+        self.networks_tree.setSelectionMode(self.networks_tree.ExtendedSelection)
+        self.networks_tree.setAlternatingRowColors(True)
+        self.layout().insertWidget(self.layout().indexOf(placeholder), self.networks_tree)
+
+        self.layout().removeWidget(placeholder)
+        placeholder.setParent(None)
+        placeholder.deleteLater()
 
         self.main_prgbar.setVisible(False)
+
+        self.check_all_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Checked))
+        self.check_none_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Unchecked))
+        self.check_selected_btn.clicked.connect(lambda: self.networks_tree.check_selected_items(QtCore.Qt.Checked))
 
         self.main_btnbox.accepted.connect(self.accept)
         self.main_btnbox.rejected.connect(self.reject)
 
         self.load_settings()
-
-    def populate(self, networks):
-        self.networks = networks
-        for network in networks:
-            item = SortTreeWidgetItem([network.material_name, network.material_node_name])
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable)
-            item.setData(0, QtCore.Qt.UserRole, network)
-
-            if network.exists:
-                icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
-                item.setCheckState(0, QtCore.Qt.Unchecked)
-            else:
-                icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
-                item.setCheckState(0, QtCore.Qt.Checked)
-            item.setSortData(2, network.exists)
-            item.setIcon(2, icon)
-
-            icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
-            item.setSortData(2, False)
-
-            item.setIcon(2, icon)
-
-            children = []
-            for channel in network.channels:
-                file_name = os.path.basename(channel.file_path)
-                child = SortTreeWidgetItem([channel.attribute_name, channel.file_node_name, None, file_name])
-                child.setData(0, QtCore.Qt.UserRole, channel)
-                if channel.exists:
-                    icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
-                    child.setCheckState(0, QtCore.Qt.Unchecked)
-                else:
-                    icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
-                    child.setCheckState(0, QtCore.Qt.Checked)
-                child.setSortData(2, channel.exists)
-                child.setIcon(2, icon)
-
-                child.setFlags(child.flags() | QtCore.Qt.ItemIsUserCheckable)
-                children.append(child)
-
-            item.addChildren(children)
-            self.materials_tree.addTopLevelItem(item)
-
-        self.materials_tree.expandAll()
-        for i in range(self.materials_tree.header().count()):
-            self.materials_tree.resizeColumnToContents(i)
-        self.materials_tree.collapseAll()
-
-    def context_menu(self, pos):
-        menu = QtWidgets.QMenu(self)
-        action = menu.addAction('Check')
-        action.triggered.connect(lambda: self.check_selected_items(QtCore.Qt.Checked))
-        action = menu.addAction('Uncheck')
-        action.triggered.connect(lambda: self.check_selected_items(QtCore.Qt.Unchecked))
-        menu.exec_(self.materials_tree.viewport().mapToGlobal(pos))
-
-    def check_selected_items(self, checkstate):
-        for item in self.materials_tree.selectedItems():
-            item.setCheckState(0, checkstate)
 
     def save_settings(self):
         self.settings.setValue('networks_dialog/pos', self.pos())
@@ -108,19 +63,19 @@ class NetworksDialog(QtWidgets.QDialog):
         self.save_settings()
         from plugins.maya_arnold import Importer
         importer = Importer()
-        for i in range(self.materials_tree.topLevelItemCount()):
-            item = self.materials_tree.topLevelItem(i)
+
+        for i in range(self.networks_tree.topLevelItemCount()):
+            item = self.networks_tree.topLevelItem(i)
             network = item.data(0, QtCore.Qt.UserRole)
             if not item.checkState(0):
                 continue
 
-            attributes = []
+            network.channels = []
             for j in range(item.childCount()):
                 child = item.child(j)
-                attribute = child.data(0, QtCore.Qt.UserRole)
+                channel = child.data(0, QtCore.Qt.UserRole)
                 if child.checkState(0):
-                    attributes.append(attribute)
-            network.channels = attributes
+                    network.channels.append(channel)
 
             kwargs = {
                 'assign_material': self.assign_chk.isChecked()
@@ -158,7 +113,100 @@ class SortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self._sortData[column] = data
 
 
+class NetworksTreeWidget(QtWidgets.QTreeWidget):
+    def __init__(self, *args):
+        super(NetworksTreeWidget, self).__init__(*args)
+
+        self.networks = []
+
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.context_menu)
+
+    def check_all_items(self, checkstate):
+        for i in range(self.topLevelItemCount()):
+            item = self.topLevelItem(i)
+            item.setCheckState(0, checkstate)
+
+    def check_selected_items(self, checkstate):
+        for item in self.selectedItems():
+            item.setCheckState(0, checkstate)
+
+    def context_menu(self, pos):
+        menu = QtWidgets.QMenu(self)
+        action = menu.addAction('Check')
+        action.triggered.connect(lambda: self.check_selected_items(QtCore.Qt.Checked))
+        action = menu.addAction('Uncheck')
+        action.triggered.connect(lambda: self.check_selected_items(QtCore.Qt.Unchecked))
+        menu.exec_(self.viewport().mapToGlobal(pos))
+
+    def add_networks(self, networks):
+        for network in networks:
+            self.add_network(network)
+
+    def add_network(self, network):
+        self.networks.append(network)
+
+        item = SortTreeWidgetItem([network.material_name, network.material_node_name])
+        item.setFlags(item.flags() | QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable)
+        item.setData(0, QtCore.Qt.UserRole, network)
+
+        if network.exists:
+            icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
+            item.setCheckState(0, QtCore.Qt.Unchecked)
+        else:
+            icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+            item.setCheckState(0, QtCore.Qt.Checked)
+        item.setSortData(2, network.exists)
+        item.setIcon(2, icon)
+
+        children = []
+        for channel in network.channels:
+            file_name = os.path.basename(channel.file_path)
+            child = SortTreeWidgetItem([channel.attribute_name, channel.file_node_name, None, file_name])
+            child.setFlags(child.flags() | QtCore.Qt.ItemIsUserCheckable)
+            child.setData(0, QtCore.Qt.UserRole, channel)
+
+            if channel.exists:
+                icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
+                child.setCheckState(0, QtCore.Qt.Unchecked)
+            else:
+                icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+                child.setCheckState(0, QtCore.Qt.Checked)
+            child.setSortData(2, channel.exists)
+            child.setIcon(2, icon)
+
+            children.append(child)
+
+        item.addChildren(children)
+        self.addTopLevelItem(item)
+
+        # self.materials_tree.expandAll()
+        # for i in range(self.materials_tree.header().count()):
+        #     self.materials_tree.resizeColumnToContents(i)
+        # self.materials_tree.collapseAll()
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+    import importer
 
-    show(NetworksDialog)
+    network = importer.Network()
+    network.mesh_name = None
+    network.material_name = 'Default'
+    network.material_node_name = 'Default_mat'
+
+    for i in range(3):
+        network_channel = importer.NetworkChannel(network)
+        network_channel.attribute_name = 'baseColor'
+        network_channel.file_node_name = 'Default_baseColor_tex'
+        network_channel.file_path = 'C:/Users/Beat/Desktop/textures/Default_baseColor.<UDIM>.png'
+
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    dialog = NetworksDialog()
+    dialog.networks_tree.add_network(network)
+    dialog.networks_tree.add_network(network)
+    dialog.show()
+    sys.exit(app.exec_())
+
+    # show(NetworksDialog)

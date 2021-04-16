@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>848</width>
-    <height>668</height>
+    <width>812</width>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,32 @@
   </property>
   <layout class="QVBoxLayout" name="main_lay">
    <item>
-    <widget class="QTreeWidget" name="materials_tree">
+    <layout class="QHBoxLayout" name="actions_lay">
+     <item>
+      <widget class="QPushButton" name="check_all_btn">
+       <property name="text">
+        <string>Check All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="check_none_btn">
+       <property name="text">
+        <string>Check None</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="check_selected_btn">
+       <property name="text">
+        <string>Check Selected</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QTreeWidget" name="networks_tree">
      <property name="alternatingRowColors">
       <bool>true</bool>
      </property>
@@ -33,22 +58,7 @@
      </attribute>
      <column>
       <property name="text">
-       <string>Material</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Node Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Exists</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>File Name</string>
+       <string notr="true">1</string>
       </property>
      </column>
     </widget>

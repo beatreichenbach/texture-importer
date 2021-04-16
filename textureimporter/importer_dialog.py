@@ -23,23 +23,18 @@ class ImporterDialog(QtWidgets.QDialog):
         self.load_config_files()
 
         self.init_ui()
-        self._connect_ui()
-
         self.update_config_cmb()
+
+        self._connect_ui()
         self.load_settings()
 
     def init_ui(self):
         load_ui(self, 'importer_dialog.ui')
 
-        self.list_widget = ListWidget(widget=ChannelItem)
-        self.list_widget.item_changed.connect(self.connect_item)
+        self.config_wdg = ConfigWidget(self, self.dcc)
+        self.config_scroll.setWidget(self.config_wdg)
 
-        self.config_lay.insertWidget(self.config_lay.count() - 1, self.list_widget)
-
-        # load renderers
-        for renderer in plugin_utils.render_plugins(self.dcc).keys():
-            self.renderer_cmb.addItem(renderer.title(), renderer)
-
+        # Config Button Menu
         menu = QtWidgets.QMenu(self)
         action = menu.addAction('New...')
         action.triggered.connect(self.new_config)
@@ -56,9 +51,9 @@ class ImporterDialog(QtWidgets.QDialog):
 
         action = menu.addAction('Delete')
         action.triggered.connect(self.delete_config)
-
         self.config_btn.setMenu(menu)
 
+        # Menu Bar
         menu_bar = QtWidgets.QMenuBar(self)
         menu = QtWidgets.QMenu('File')
         action = menu.addAction('Import Config')
@@ -81,40 +76,23 @@ class ImporterDialog(QtWidgets.QDialog):
         menu.addAction('About')
         menu.addAction('Check for Updates')
         menu_bar.addMenu(menu)
-
         self.layout().setMenuBar(menu_bar)
 
         self.main_prgbar.setVisible(False)
 
     def _connect_ui(self):
+        self.path_browse_btn.clicked.connect(self.browse_path)
         self.config_cmb.currentTextChanged.connect(self.config_changed)
 
-        self.path_browse_btn.clicked.connect(self.browse_path)
+        self.search_btn.clicked.connect(self.accept)
+        self.cancel_btn.clicked.connect(self.reject)
 
-        self.main_btnbox.accepted.connect(self.accept)
-        self.main_btnbox.rejected.connect(self.reject)
-
-    def connect_item(self, item):
-        item.widget.attribute_cmb.currentIndexChanged.connect(self.lock_channels)
-        self.lock_channels()
-
-    def lock_channels(self):
-        used_channels = []
-        for item in self.list_widget.items():
-            attribute_cmb = item.widget.attribute_cmb
-            if attribute_cmb.currentIndex() in used_channels:
-                attribute_cmb.setCurrentIndex(-1)
-            else:
-                used_channels.append(attribute_cmb.currentIndex())
-
-        for item in self.list_widget.items():
-            attribute_cmb = item.widget.attribute_cmb
-            for i in range(attribute_cmb.count()):
-                cmb_item = attribute_cmb.model().item(i)
-                cmb_item.setEnabled(i not in used_channels)
-
-    def config_changed(self, text):
+    def config_changed(self, text=None):
         logging.debug(('config_changed', text))
+        if text is None:
+            text = self.config_cmb.currentText()
+        if not text:
+            return
         self.load_config(text)
 
     def new_config(self):
@@ -127,44 +105,35 @@ class ImporterDialog(QtWidgets.QDialog):
             config = utils.Config(name)
             self.config_cmb.insertItem(0, name, config)
             self.config_cmb.setCurrentIndex(0)
-            self.list_widget.clear()
+            self.config_wdg.list_wdg.clear()
 
             self.save_config(name)
 
     def save_config(self, name=''):
+        logging.debug(('save_config', name))
         if not name:
             name = self.config_cmb.currentText()
             if not name:
                 self.save_config_as()
 
         # Update config object
-        config = self.config_cmb.itemData(self.config_cmb.findText(name))
-        if not config:
-            config = utils.Config(name)
+        config = self.config_wdg.config
         config.name = name
-        config.renderer = self.renderer_cmb.currentData()
-        config.channels = []
-        for item in self.list_widget.items():
-            channel = utils.ConfigChannel(
-                attribute=item.widget.attribute_cmb.currentText(),
-                pattern=item.widget.pattern_line.text(),
-                colorspace=item.widget.colorspace_cmb.currentText())
-            config.channels.append(channel)
 
         self._configs[name] = config
-
-        self.update_config_cmb()
-        self.config_cmb.setCurrentIndex(self.config_cmb.findText(name))
-
         self.save_config_files()
+        self.update_config_cmb()
+        self.config_cmb.setCurrentText(name)
 
     def save_config_as(self):
-        name, result = QtWidgets.QInputDialog.getText(self, 'Save As...', 'Config:')
+        name, result = QtWidgets.QInputDialog.getText(
+            self, 'Save As...', 'Config:', text=self.config_cmb.currentText())
         if result:
             self.save_config(name)
 
     def rename_config(self):
-        name, result = QtWidgets.QInputDialog.getText(self, 'Rename Config', 'Config:', text=self.config_cmb.currentText())
+        name, result = QtWidgets.QInputDialog.getText(
+            self, 'Rename Config', 'Config:', text=self.config_cmb.currentText())
         if result:
             del self._configs[self.config_cmb.currentText()]
             self.save_config(name)
@@ -174,36 +143,23 @@ class ImporterDialog(QtWidgets.QDialog):
         del self._configs[name]
         os.remove(os.path.join(self.settings.configs_path, '{}.json'.format(name)))
         self.update_config_cmb()
-
-    def reset_config(self):
-        self.renderer_cmb.setCurrentIndex(0)
-        self.list_widget.clear()
+        self.config_cmb.setCurrentIndex(0)
 
     def load_config(self, name):
-        logging.debug('load_config')
+        logging.debug(('load_config', name))
         config = self._configs.get(name)
         if not config:
             return
 
-        self.reset_config()
-
-        logging.debug(name)
-        self.renderer_cmb.setCurrentText(config.renderer)
-        for channel in config.channels:
-            item = self.list_widget.add_item()
-            item.widget.attribute_cmb.setCurrentText(channel.attribute)
-            item.widget.pattern_line.setText(channel.pattern)
-            item.widget.colorspace_cmb.setCurrentText(channel.colorspace)
+        self.config_wdg.config = config
 
     def update_config_cmb(self):
         self.config_cmb.blockSignals(True)
         self.config_cmb.clear()
-        name = ''
         for name, config in utils.sorted_dict(self._configs.items()):
             self.config_cmb.addItem(config.name, config)
-        self.config_cmb.setCurrentText(name)
+        self.config_cmb.setCurrentIndex(-1)
         self.config_cmb.blockSignals(False)
-        self.config_changed(name)
 
     def save_config_files(self):
         for name, config in self._configs.items():
@@ -241,8 +197,9 @@ class ImporterDialog(QtWidgets.QDialog):
         config = self.config_cmb.currentData()
         include_subfolders = self.subfolders_chk.isChecked()
 
-        importer_ = importer.Importer.from_plugin(self.dcc, config.renderer)
-        networks = importer_.get_networks(path, config, include_subfolders)
+        self.importer = importer.Importer.from_plugin(self.dcc, config.renderer)
+        logging.debug(self.importer.__dict__)
+        networks = self.importer.get_networks(path, config, include_subfolders)
         if not networks:
             QtWidgets.QMessageBox.information(
                 self,
@@ -252,7 +209,7 @@ class ImporterDialog(QtWidgets.QDialog):
             return
 
         dialog = networks_dialog.NetworksDialog(self)
-        dialog.populate(networks)
+        dialog.networks_tree.add_networks(networks)
         dialog.setModal(True)
         result = dialog.exec_()
 
@@ -272,6 +229,7 @@ class ImporterDialog(QtWidgets.QDialog):
         self.settings.setValue('importer_dialog/pos', self.pos())
         self.settings.setValue('importer_dialog/size', self.size())
         self.settings.setValue('importer/current_config', self.config_cmb.currentText())
+        self.settings.setValue('importer/current_path', self.path_cmb.currentText())
         self.settings.setValue('importer/include_subfolders', self.subfolders_chk.isChecked())
 
     def load_settings(self):
@@ -282,11 +240,16 @@ class ImporterDialog(QtWidgets.QDialog):
             self.resize(self.settings.value('importer_dialog/size'))
 
         index = self.config_cmb.findText(self.settings.value('importer/current_config', ''))
+        self.config_cmb.blockSignals(True)
         self.config_cmb.setCurrentIndex(max(0, index))
-        self.config_changed(self.config_cmb.currentText())
+        self.config_cmb.blockSignals(False)
+        self.config_cmb.currentTextChanged.emit(self.config_cmb.currentText())
 
         for path in self.settings.list('importer/recent_paths'):
             self.path_cmb.addItem(path)
+
+        index = self.path_cmb.findText(self.settings.value('importer/current_path', ''))
+        self.path_cmb.setCurrentIndex(max(0, index))
 
         self.subfolders_chk.setChecked(self.settings.bool('importer/include_subfolders'))
 
@@ -313,13 +276,15 @@ class ImporterDialog(QtWidgets.QDialog):
         if path:
             import shutil
             logging.debug(path)
-            shutil.copy2(path, self.settings.configs_path)
-            self.load_config_files()
+            config_path = shutil.copy2(path, self.settings.configs_path)
+            config = utils.Config.from_json(config_path)
+            self._configs[config.name] = config
             self.update_config_cmb()
+            self.config_cmb.setCurrentText(config.name)
 
 
 class ListWidget(QtWidgets.QWidget):
-    item_changed = QtCore.Signal(object)
+    items_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, widget=QtWidgets.QWidget):
         super(ListWidget, self).__init__(parent)
@@ -335,33 +300,30 @@ class ListWidget(QtWidgets.QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(9)
         # layout.setSpacing(0)
-        # layout.addStretch(1)
-
-        self.setLayout(layout)
 
         self.add_btn = ListAddButton()
-        self.layout().insertWidget(-1, self.add_btn)
-        self.layout().addStretch(1)
+        layout.insertWidget(-1, self.add_btn)
+
+        layout.addStretch(1)
+        self.setLayout(layout)
 
         self.add_btn.clicked.connect(self.add_item)
 
     def add_item(self):
-        logging.debug('add_item')
         item = ListItem(parent=self, widget=self._widget_cls)
         self.layout().insertWidget(self.layout().count() - 2, item)
         self.layout().setStretchFactor(item, 0)
-
-        self.item_changed.emit(item)
-
+        self.items_changed.emit(item)
         return item
 
     def delete_item(self, item=None):
-        self.item_changed.emit(item)
+        self.items_changed.emit(None)
         self.layout().removeWidget(item)
         item.deleteLater()
 
     def clear(self):
         # self.setUpdatesEnabled(False)
+        # oh god please fix this -2
         while self.layout().count() > 2:
             item = self.layout().takeAt(0)
             if item.widget():
@@ -369,6 +331,7 @@ class ListWidget(QtWidgets.QWidget):
         # self.setUpdatesEnabled(True)
 
     def items(self):
+        # oh god please fix this -2
         return [self.layout().itemAt(i).widget() for i in range(self.layout().count() - 2)]
 
     def draw_drop_line(self, index=-1):
@@ -407,7 +370,6 @@ class ListWidget(QtWidgets.QWidget):
         if new_index > current_index:
             new_index -= 1
 
-        logging.debug(new_index)
         self.layout().insertWidget(new_index, item)
 
     def drop_index(self, event):
@@ -442,7 +404,7 @@ class ListWidget(QtWidgets.QWidget):
 
 
 class ListItem(QtWidgets.QWidget):
-    def __init__(self, parent=None, widget=QtWidgets.QWidget):
+    def __init__(self, parent, widget=QtWidgets.QWidget):
         super(ListItem, self).__init__(parent)
 
         self._list_widget = parent
@@ -477,7 +439,7 @@ class ListItem(QtWidgets.QWidget):
         self.delete_btn.clicked.connect(self.delete)
 
     def delete(self):
-        self._list_widget.delete_item(self)
+        self.parent().delete_item(self)
 
     def dragDropRect(self):
         return QtCore.QRect(10, 10, 10, self.height() - 20)
@@ -532,14 +494,14 @@ class ListAddButton(QtWidgets.QPushButton):
         self.setGraphicsEffect(effect)
 
 
-class ChannelItem(QtWidgets.QWidget):
+class ChannelWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(ChannelItem, self).__init__(parent)
+        super(ChannelWidget, self).__init__(parent)
 
         self._load_ui()
 
     def _load_ui(self):
-        load_ui(self, 'channel_item.ui')
+        load_ui(self, 'channel_widget.ui')
 
         self.attribute_cmb.setCurrentIndex(-1)
         self.attribute_cmb.currentIndexChanged.emit(0)
@@ -565,6 +527,130 @@ class ChannelItem(QtWidgets.QWidget):
 
         self.pattern_line.setText(text)
         self.pattern_line.setCursorPosition(pos + len(action.text()))
+
+    @property
+    def attributes(self):
+        return [self.attribute_cmb.itemText(i) for i in range(self.attribute_cmb.count())]
+
+    @attributes.setter
+    def attributes(self, attributes):
+        self.attribute_cmb.blockSignals(True)
+        self.attribute_cmb.clear()
+        self.attribute_cmb.addItems(attributes)
+        self.attribute_cmb.setCurrentIndex(-1)
+        self.attribute_cmb.adjustSize()
+        self.attribute_cmb.blockSignals(False)
+
+    @property
+    def colorspaces(self):
+        return [self.colorspace_cmb.itemText(i) for i in range(self.colorspace_cmb.count())]
+
+    @colorspaces.setter
+    def colorspaces(self, colorspaces):
+        self.colorspace_cmb.blockSignals(True)
+        self.colorspace_cmb.clear()
+        self.colorspace_cmb.addItems(colorspaces)
+        self.colorspace_cmb.setCurrentIndex(0)
+        self.colorspace_cmb.adjustSize()
+        self.colorspace_cmb.blockSignals(False)
+
+    @property
+    def channel(self):
+        channel = utils.ConfigChannel(
+            attribute=self.attribute_cmb.currentText(),
+            pattern=self.pattern_line.text(),
+            colorspace=self.colorspace_cmb.currentText())
+        return channel
+
+    @channel.setter
+    def channel(self, channel):
+        self.attribute_cmb.setCurrentText(channel.attribute)
+        self.pattern_line.setText(channel.pattern)
+        self.colorspace_cmb.setCurrentText(channel.colorspace)
+
+
+class ConfigWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, dcc=''):
+        super(ConfigWidget, self).__init__(parent)
+
+        self.dcc = dcc
+        self.renderers = plugin_utils.render_plugins(self.dcc)
+
+        self._load_ui()
+
+    def _load_ui(self):
+        load_ui(self, 'config_widget.ui')
+
+        for renderer in self.renderers.keys():
+            self.renderer_cmb.addItem(renderer.title(), renderer)
+
+        self.list_wdg = ListWidget(widget=ChannelWidget)
+        self.layout().addWidget(self.list_wdg)
+        self.layout().addStretch(1)
+
+        self.renderer_cmb.currentTextChanged.connect(self.renderer_changed)
+        self.list_wdg.items_changed.connect(self.list_items_changed)
+
+    def list_items_changed(self, item):
+        logging.debug('list_items_changed')
+        if item is not None:
+            item.widget.attribute_cmb.currentIndexChanged.connect(self.lock_channels)
+            item.widget.attributes = self.importer.attributes
+            item.widget.colorspaces = self.importer.colorspaces
+        self.lock_channels()
+
+    def renderer_changed(self, text=None):
+        logging.debug('renderer_changed')
+        renderer = self.renderer_cmb.currentData()
+        if not renderer:
+            return
+        logging.debug(('renderer changed', renderer))
+        self.importer = importer.Importer.from_plugin(self.dcc, renderer)
+        for item in self.list_wdg.items():
+            item.widget.attributes = self.importer.attributes
+
+    def lock_channels(self):
+        # find a better name for this. The function enables unused / disables used items.
+        logging.debug('lock_channels')
+        used_channels = []
+        for item in self.list_wdg.items():
+            attribute_cmb = item.widget.attribute_cmb
+            if attribute_cmb.currentIndex() in used_channels:
+                attribute_cmb.setCurrentIndex(-1)
+            else:
+                used_channels.append(attribute_cmb.currentIndex())
+
+        for item in self.list_wdg.items():
+            attribute_cmb = item.widget.attribute_cmb
+            for i in range(attribute_cmb.count()):
+                cmb_item = attribute_cmb.model().item(i)
+                cmb_item.setEnabled(i not in used_channels)
+
+    @property
+    def config(self):
+        logging.debug('get_config')
+
+        config = utils.Config()
+        config.renderer = self.renderer_cmb.currentData()
+        config.channels = [item.widget.channel for item in self.list_wdg.items()]
+
+        return config
+
+    @config.setter
+    def config(self, config):
+        logging.debug(('set_config', config.name))
+
+        self.reset_config()
+        self.renderer_cmb.setCurrentText(config.renderer.title())
+
+        for channel in config.channels:
+            item = self.list_wdg.add_item()
+            item.widget.channel = channel
+
+    def reset_config(self):
+        # making sure to trigger renderer_changed
+        self.renderer_cmb.setCurrentIndex(-1)
+        self.list_wdg.clear()
 
 
 if __name__ == '__main__':

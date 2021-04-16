@@ -7,13 +7,15 @@ import importlib
 
 
 class Importer(object):
-    def __init__(self):
-        self.config = None
-        self.path = ''
+    config = None
+    path = ''
+    material_node_pattern = '{}_mat'
+    file_node_pattern = '{}_tex'
+    default_name = 'default'
+    attributes = []
 
-        self.material_node_pattern = '{}_mat'
-        self.file_node_pattern = '{}_tex'
-        self.default_name = 'default'
+    def __init__(self):
+        return
 
     @classmethod
     def from_plugin(cls, dcc, renderer):
@@ -47,11 +49,11 @@ class Importer(object):
             for (key, value) in option:
                 resolved_pattern = re.sub(re.escape(key), value, resolved_pattern)
 
-            if mesh is not None:
+            if mesh:
                 resolved_pattern = re.sub(r'\$mesh', mesh, resolved_pattern)
-            if material is not None:
+            if material:
                 resolved_pattern = re.sub(r'\$material', material, resolved_pattern)
-            if udim is not None:
+            if udim:
                 resolved_pattern = re.sub(r'\$udim', udim, resolved_pattern)
             resolved_patterns.append(resolved_pattern)
 
@@ -67,6 +69,9 @@ class Importer(object):
             files = glob.glob(os.path.join(self.path, pattern))
 
         return files
+
+    def exists(self, node_name):
+        return False
 
     def get_selection(self):
         return [(None, None)]
@@ -119,6 +124,7 @@ class Importer(object):
         network.mesh_name = mesh
         network.material_name = material_name
         network.material_node_name = material_node_name
+        network.exists = self.exists(material_node_name)
 
         for channel in channels:
             patterns = self.resolve_pattern(channel.pattern, mesh=mesh, material=material)
@@ -145,6 +151,7 @@ class Importer(object):
             network_channel.file_node_name = file_node_name
             network_channel.colorspace = channel.colorspace
             network_channel.file_path = file_path
+            network_channel.exists = self.exists(file_node_name)
 
         if not network.channels:
             return
@@ -171,14 +178,15 @@ class Network(object):
         self.material_name = ''
         self.mesh_name = ''
         self.channels = []
+        self.exists = False
 
     # @property
     # def material_node_name(self):
     #     return self.material_node_pattern.format(self.material_name)
 
-    @property
-    def exists(self):
-        return False
+    # @property
+    # def exists(self):
+    #     return False
 
 
 class NetworkChannel(object):
@@ -188,6 +196,7 @@ class NetworkChannel(object):
         self.file_path = ''
         self.colorspace = ''
         self.file_node = ''
+        self.exists = False
 
         network.channels.append(self)
 
@@ -196,9 +205,9 @@ class NetworkChannel(object):
     #     material_atttribute = '{}_{}'.format(self.network.material_name, self.attribute_name)
     #     return self.file_node_pattern.format(material_atttribute)
 
-    @property
-    def exists(self):
-        return False
+    # @property
+    # def exists(self):
+    #     return False
 
 
 if __name__ == '__main__':

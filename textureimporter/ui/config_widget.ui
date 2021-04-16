@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>main</class>
+ <widget class="QWidget" name="main">
+  <property name="windowTitle">
+   <string>Config Widget</string>
+  </property>
+  <layout class="QVBoxLayout" name="main_lay">
+   <item>
+    <layout class="QHBoxLayout" name="renderer_lay" stretch="0,1">
+     <item>
+      <widget class="QLabel" name="renderer_lbl">
+       <property name="text">
+        <string>Renderer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="renderer_cmb"/>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
