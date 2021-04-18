@@ -228,6 +228,7 @@ class ImporterDialog(QtWidgets.QDialog):
     def closeEvent(self, event):
         logging.debug('closeEvent')
         self.save_settings()
+        event.accept()
 
     def save_settings(self):
         logging.debug('save_settings')
@@ -296,7 +297,20 @@ class ImporterDialog(QtWidgets.QDialog):
             self.config_cmb.setCurrentText(config.name)
 
     def update(self):
-        setup.Installer.update(self.dcc)
+        result = setup.Installer.update(self.dcc)
+        if result:
+            QtWidgets.QMessageBox.information(
+                self,
+                'Update',
+                'Update successful.',
+                QtWidgets.QMessageBox.Ok)
+        else:
+            QtWidgets.QMessageBox.information(
+                self,
+                'Update',
+                'Update failed. Please see log.',
+                QtWidgets.QMessageBox.Ok)
+        self.close()
 
 
 class ListWidget(QtWidgets.QWidget):
