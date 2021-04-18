@@ -4,11 +4,6 @@ import json
 from PySide2 import QtWidgets, QtCore, QtGui
 import sys
 
-try:
-    reload
-except NameError:
-    from importlib import reload
-
 
 def join_url(url, *urls):
     urls = list(urls)

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 import logging
@@ -11,8 +13,8 @@ except ImportError:
     import urllib2 as urllib
 from contextlib import closing
 
-import plugin_utils
-import utils
+from textureimporter import plugin_utils
+from textureimporter import utils
 
 
 class Installer(object):
@@ -37,7 +39,6 @@ class Installer(object):
         installer = cls(dcc)
         logging.info('Updating {}...'.format(os.path.basename(installer.package_path)))
         result = installer.update_package()
-        utils.unload_modules()
         return result
 
     def install_package(self):
@@ -69,10 +70,16 @@ class Installer(object):
                 raise EnvironmentError
 
             sys.path.insert(1, installer_path)
-            from textureimporter import setup
-            setup.Installer.install(self.dcc)
-            del setup
-            sys.path.remove(installer_path)
+            try:
+                utils.unload_modules()
+                from textureimporter import setup
+                setup.Installer.install(self.dcc)
+                del setup
+            except Exception as e:
+                raise e
+            finally:
+                sys.path.remove(installer_path)
+
         except Exception as e:
             logging.error(e)
             logging.error('Update failed. Please see log.')
