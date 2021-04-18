@@ -137,9 +137,9 @@ class Importer(maya.Importer):
             material_name = material_node.replace(self.material_node_pattern, '') #this is some bad juju
             normal_node_name = self.normal_node_pattern.format(material_name)
             normal_node = cmds.shadingNode('RedshiftBumpMap', name=normal_node_name, asUtility=True)
-            # cmds.setAttr('{}.space'.format(normal_node), 'TangentSpaceNormal', type='string')
+            cmds.setAttr('{}.inputType'.format(normal_node), 1)
             cmds.connectAttr('{}.outColor'.format(file_node), '{}.input'.format(normal_node), force=True)
-            cmds.connectAttr('{}.outValue'.format(normal_node), '{}.{}'.format(material_node, material_attribute), force=True)
+            cmds.connectAttr('{}.out'.format(normal_node), '{}.{}'.format(material_node, material_attribute), force=True)
 
         elif material_attribute == 'displacement':
             # catch error
