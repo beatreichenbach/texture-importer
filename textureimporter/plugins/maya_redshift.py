@@ -126,7 +126,7 @@ class Importer(maya.Importer):
         return attrs
 
     def create_material(self, material_node_name, shadingengine_node_name):
-        material_node = cmds.shadingNode('ReshiftMaterial', name=material_node_name, asShader=True)
+        material_node = cmds.shadingNode('RedshiftMaterial', name=material_node_name, asShader=True)
         shadingengine_node = cmds.sets(name=shadingengine_node_name, empty=True, renderable=True, noSurfaceShader=True)
         cmds.connectAttr('{}.outColor'.format(material_node), '{}.surfaceShader'.format(shadingengine_node))
 
