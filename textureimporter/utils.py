@@ -2,6 +2,18 @@ import os
 import logging
 import json
 from PySide2 import QtWidgets, QtCore, QtGui
+import sys
+
+try:
+    reload
+except NameError:
+    from importlib import reload
+
+
+def join_url(url, *urls):
+    urls = list(urls)
+    urls.insert(0, url)
+    return '/'.join([s.strip('/') for s in urls])
 
 
 def sorted_dict(dict):
@@ -14,16 +26,21 @@ def to_dict(obj):
     )
 
 
+def unload_modules():
+    for module in sys.modules.values():
+        if module and module.__name__.startswith(__package__):
+            logging.debug('Unloading module: {}'.format(module.__name__))
+            del sys.modules[module.__name__]
+
+
 class Settings(QtCore.QSettings):
     def __init__(self):
         self.settings_path = os.path.dirname(__file__)
         self.configs_path = os.path.join(self.settings_path, 'configs')
 
-        try:
-            if not os.access(self.settings_path, os.W_OK):
-                raise PermissionError
-        except PermissionError:
-            self.settings_path = os.path.join(os.path.expanduser("~"), '.textureimporter')
+        if not os.access(self.settings_path, os.W_OK):
+            home_path = os.path.join(os.path.expanduser("~"), '.{}'.format(__package__))
+            self.settings_path = home_path
 
         settings_file_path = os.path.join(self.settings_path, 'settings.ini')
         super(Settings, self).__init__(settings_file_path, QtCore.QSettings.IniFormat)

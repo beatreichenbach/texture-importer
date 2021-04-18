@@ -1,6 +1,6 @@
 global proc textureimporter_setup() {
-	$cwd = dirname(substitute(".+: ", whatIs("textureimporter_setup"), ""));
-	$code = "import sys; sys.path.append('" + $cwd + "'); import setup_maya; setup_maya.install()";
-	python($code);
+	$cwd = dirname(dirname(substitute(".+: ", whatIs("textureimporter_setup"), "")));
+	$code = "import sys; cwd = r'" + $cwd + "'; sys.path.insert(1, cwd); from textureimporter import setup; setup.Installer.install('maya'); del setup; sys.path.remove(cwd)";
+    python($code);
 }
 textureimporter_setup;

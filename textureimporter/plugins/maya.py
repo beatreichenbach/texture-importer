@@ -2,9 +2,19 @@ from __future__ import absolute_import
 import sys
 from PySide2 import QtWidgets
 from textureimporter import importer_dialog
-from maya import cmds
+from maya import mel, cmds
 from .. import importer
+from .. import setup
 import logging
+import os
+
+
+def run():
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    main_window = next(w for w in app.topLevelWidgets() if w.objectName() == 'MayaWindow')
+    dialog = importer_dialog.ImporterDialog(main_window, dcc='maya')
+    dialog.show()
+    return main_window
 
 
 class Importer(importer.Importer):
@@ -54,7 +64,7 @@ class Importer(importer.Importer):
     def exists(self, node_name):
         return cmds.objExists(node_name)
 
-    def create_network(self, network, kwargs):
+    def create_network(self, network):
         shadingengine_node_name = self.shadingengine_node_pattern.format(network.material_name)
         material_node, shadingengine_node = self.create_material(network.material_node_name, shadingengine_node_name)
 
@@ -131,9 +141,60 @@ class Importer(importer.Importer):
             cmds.hyperShade(material, assign=True)
 
 
-def run():
-    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-    main_window = next(w for w in app.topLevelWidgets() if w.objectName() == 'MayaWindow')
-    dialog = importer_dialog.ImporterDialog(main_window, dcc='maya')
-    dialog.show()
-    return main_window
+class Installer(setup.Installer):
+    # def __init__(self):
+    #     super(Installer, self).__init__()
+
+    def create_button(self):
+        shelf_name = 'Plugins'
+        label = 'textureimporter'
+        image_path = 'textureEditor.png'
+        command = (
+            'from textureimporter.plugins.maya import run\n'
+            'main_window = run()')
+
+        top_level_shelf = mel.eval('$gShelfTopLevel = $gShelfTopLevel;')
+
+        if cmds.shelfLayout(shelf_name, exists=True):
+            buttons = cmds.shelfLayout(shelf_name, query=True, childArray=True) or []
+            for button in buttons:
+                if cmds.shelfButton(button, label=True, query=True) == label:
+                    cmds.deleteUI(button)
+        else:
+            mel.eval('addNewShelfTab "{}";'.format(shelf_name))
+
+        cmds.shelfButton(label=label, command=command, parent=shelf_name, image=image_path)
+        logging.info('Created button "{}"" on shelf "{}".'.format(label, shelf_name))
+        return cmds.saveAllShelves(top_level_shelf)
+
+    def install_package(self):
+        maya_app_path = os.path.normpath(os.getenv('MAYA_APP_DIR'))
+        if maya_app_path is None:
+            if sys.platform.startswith('win32'):
+                maya_app_path = os.path.join(os.path.expanduser("~"), 'Documents', 'Maya')
+            elif sys.platform.startswith('linux'):
+                maya_app_path = os.path.join(os.path.expanduser("~"), 'Maya')
+            elif sys.platform.startswith('darwin'):
+                maya_app_path = os.path.join(os.path.expanduser("~"), 'Library', 'Preferences', 'Autodesk', 'Maya')
+
+        if not maya_app_path:
+            logging.error('Could not find maya scripts directory.')
+            return False
+
+        scripts_path = os.path.join(maya_app_path, 'scripts')
+        if not os.path.isdir(scripts_path):
+            os.makedirs(scripts_path)
+
+        if not self.copy_package(scripts_path):
+            return False
+
+        try:
+            self.create_button()
+        except ModuleNotFoundError:
+            logging.error(
+                'Could not install maya script button. '
+                'Make sure to run the setup from Maya.')
+            return False
+
+        logging.info('Installation successfull.')
+        return True

@@ -64,58 +64,25 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="conflict_lay" stretch="0,1">
+    <layout class="QHBoxLayout" name="footer_lay" stretch="0,0,0">
      <item>
-      <widget class="QLabel" name="conflict_lbl">
+      <spacer name="spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="create_btn">
        <property name="text">
-        <string>On Conflict:</string>
+        <string>Create</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="conflict_cmb">
-       <item>
-        <property name="text">
-         <string>Update Existing Nodes</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Replace Exising Nodes</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Rename Nodes</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="assign_chk">
-     <property name="text">
-      <string>Assign Materials to Selection (Only Applies When Using $mesh)</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="footer_lay" stretch="1,0">
-     <item>
-      <widget class="QProgressBar" name="main_prgbar">
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="textVisible">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QDialogButtonBox" name="main_btnbox">
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <widget class="QPushButton" name="cancel_btn">
+       <property name="text">
+        <string>Cancel</string>
        </property>
       </widget>
      </item>

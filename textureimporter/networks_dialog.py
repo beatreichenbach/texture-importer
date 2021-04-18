@@ -2,7 +2,7 @@ import logging
 import os
 
 from PySide2 import QtWidgets, QtCore, QtGui
-from gui_utils import load_ui, show
+import gui_utils
 import utils
 
 
@@ -16,7 +16,7 @@ class NetworksDialog(QtWidgets.QDialog):
         self.init_ui()
 
     def init_ui(self):
-        load_ui(self, 'networks_dialog.ui')
+        gui_utils.load_ui(self, 'networks_dialog.ui')
 
         placeholder = self.networks_tree
         self.networks_tree = NetworksTreeWidget(self.networks_tree)
@@ -30,22 +30,18 @@ class NetworksDialog(QtWidgets.QDialog):
         placeholder.setParent(None)
         placeholder.deleteLater()
 
-        self.main_prgbar.setVisible(False)
-
         self.check_all_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Checked))
         self.check_none_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Unchecked))
         self.check_selected_btn.clicked.connect(lambda: self.networks_tree.check_selected_items(QtCore.Qt.Checked))
 
-        self.main_btnbox.accepted.connect(self.accept)
-        self.main_btnbox.rejected.connect(self.reject)
+        self.create_btn.clicked.connect(self.accept)
+        self.cancel_btn.clicked.connect(self.reject)
 
         self.load_settings()
 
     def save_settings(self):
         self.settings.setValue('networks_dialog/pos', self.pos())
         self.settings.setValue('networks_dialog/size', self.size())
-        self.settings.setValue('importer/on_conflict', self.conflict_cmb.currentText())
-        self.settings.setValue('importer/assign_materials', self.assign_chk.isChecked())
 
     def load_settings(self):
         if self.settings.value('assign_materials/pos'):
@@ -53,17 +49,10 @@ class NetworksDialog(QtWidgets.QDialog):
         if self.settings.value('networks_dialog/size'):
             self.resize(self.settings.value('networks_dialog/size'))
 
-        current_index = self.conflict_cmb.findText(self.settings.value('importer/on_conflict', ''))
-        current_index = max(0, current_index)
-        self.conflict_cmb.setCurrentIndex(current_index)
-
-        self.assign_chk.setChecked(self.settings.bool('importer/assign_materials'))
-
     def accept(self):
         self.save_settings()
-        from plugins.maya_arnold import Importer
-        importer = Importer()
 
+        self.networks = []
         for i in range(self.networks_tree.topLevelItemCount()):
             item = self.networks_tree.topLevelItem(i)
             network = item.data(0, QtCore.Qt.UserRole)
@@ -77,11 +66,7 @@ class NetworksDialog(QtWidgets.QDialog):
                 if child.checkState(0):
                     network.channels.append(channel)
 
-            kwargs = {
-                'assign_material': self.assign_chk.isChecked()
-            }
-            importer.create_network(network, kwargs)
-
+            self.networks.append(network)
         super(NetworksDialog, self).accept()
 
     def reject(self):
@@ -90,6 +75,17 @@ class NetworksDialog(QtWidgets.QDialog):
 
     def closeEvent(self, event):
         self.save_settings()
+
+    @classmethod
+    def selected_networks(cls, networks):
+        logging.info('selected_networks')
+        dialog = cls()
+        dialog.networks_tree.add_networks(networks)
+        dialog.setModal(True)
+        if dialog.exec_():
+            return dialog.networks
+        else:
+            return []
 
 
 class SortTreeWidgetItem(QtWidgets.QTreeWidgetItem):

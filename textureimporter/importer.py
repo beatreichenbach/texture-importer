@@ -3,7 +3,8 @@ import glob
 import re
 import logging
 import itertools
-import importlib
+
+import plugin_utils
 
 
 class Importer(object):
@@ -13,23 +14,14 @@ class Importer(object):
     file_node_pattern = '{}_tex'
     default_name = 'default'
     attributes = []
+    colorspaces = []
 
     def __init__(self):
         return
 
     @classmethod
-    def from_plugin(cls, dcc, renderer):
-        try:
-            plugin = '.{}_{}'.format(dcc, renderer)
-            # using empty package for testing
-            package = '{}.plugins'.format(__package__ or '')
-            module = importlib.import_module(plugin, package=package)
-            cls = getattr(module, cls.__name__)
-        except ImportError as e:
-            logging.error(e)
-            logging.error(
-                'Could not find plugin, using no plugin instead. '
-                '(dcc: {}, renderer: {})'.format(dcc, renderer))
+    def from_plugin(cls, plugin):
+        cls = plugin_utils.plugin_class(cls, plugin)
         return cls()
 
     def resolve_pattern(self, pattern, mesh='*', material='*', udim='[0-9][0-9][0-9][0-9]'):
@@ -171,6 +163,9 @@ class Importer(object):
                     networks.append(network)
 
         return networks
+
+    def create_network(self, network):
+        pass
 
 
 class Network(object):

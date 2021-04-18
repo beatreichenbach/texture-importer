@@ -86,7 +86,7 @@
         <x>0</x>
         <y>0</y>
         <width>753</width>
-        <height>474</height>
+        <height>423</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="config_lay"/>
@@ -97,6 +97,43 @@
     <widget class="QCheckBox" name="subfolders_chk">
      <property name="text">
       <string>Include Sub Folders</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="conflict_lay" stretch="0,1">
+     <item>
+      <widget class="QLabel" name="conflict_lbl">
+       <property name="text">
+        <string>On Conflict:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="conflict_cmb">
+       <item>
+        <property name="text">
+         <string>Update Existing Nodes</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Replace Exising Nodes</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Rename Nodes</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="assign_chk">
+     <property name="text">
+      <string>Assign Materials to Selection (Only Applies When Using $mesh)</string>
      </property>
     </widget>
    </item>

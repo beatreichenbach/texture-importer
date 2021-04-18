@@ -7,9 +7,10 @@ from PySide2 import QtWidgets, QtCore, QtGui
 
 import importer
 import networks_dialog
-from gui_utils import show, load_ui
+import gui_utils
 import plugin_utils
 import utils
+import setup
 
 
 class ImporterDialog(QtWidgets.QDialog):
@@ -29,7 +30,7 @@ class ImporterDialog(QtWidgets.QDialog):
         self.load_settings()
 
     def init_ui(self):
-        load_ui(self, 'importer_dialog.ui')
+        gui_utils.load_ui(self, 'importer_dialog.ui')
 
         self.config_wdg = ConfigWidget(self, self.dcc)
         self.config_scroll.setWidget(self.config_wdg)
@@ -72,13 +73,17 @@ class ImporterDialog(QtWidgets.QDialog):
         menu_bar.addMenu(menu)
 
         menu = QtWidgets.QMenu('Help')
-        menu.addAction('Documentation')
-        menu.addAction('About')
-        menu.addAction('Check for Updates')
+        action = menu.addAction('Documentation')
+        action = menu.addAction('About')
+        action = menu.addAction('Update Textureimporter')
+        action.triggered.connect(self.update)
         menu_bar.addMenu(menu)
         self.layout().setMenuBar(menu_bar)
 
         self.main_prgbar.setVisible(False)
+        size_policy = self.main_prgbar.sizePolicy()
+        size_policy.setRetainSizeWhenHidden(True)
+        self.main_prgbar.setSizePolicy(size_policy)
 
     def _connect_ui(self):
         self.path_browse_btn.clicked.connect(self.browse_path)
@@ -197,8 +202,9 @@ class ImporterDialog(QtWidgets.QDialog):
         config = self.config_cmb.currentData()
         include_subfolders = self.subfolders_chk.isChecked()
 
-        self.importer = importer.Importer.from_plugin(self.dcc, config.renderer)
-        logging.debug(self.importer.__dict__)
+        plugin = '{}_{}'.format(self.dcc, config.renderer)
+        self.importer = importer.Importer.from_plugin(plugin)
+
         networks = self.importer.get_networks(path, config, include_subfolders)
         if not networks:
             QtWidgets.QMessageBox.information(
@@ -208,13 +214,12 @@ class ImporterDialog(QtWidgets.QDialog):
                 QtWidgets.QMessageBox.Ok)
             return
 
-        dialog = networks_dialog.NetworksDialog(self)
-        dialog.networks_tree.add_networks(networks)
-        dialog.setModal(True)
-        result = dialog.exec_()
+        networks = networks_dialog.NetworksDialog.selected_networks(networks)
+        for network in networks:
+            self.importer.create_network(network)
 
         # if result:
-        #     super(ImporterDialog, self).accept()
+        #    super(ImporterDialog, self).accept()
 
     def reject(self):
         self.save_settings()
@@ -231,6 +236,8 @@ class ImporterDialog(QtWidgets.QDialog):
         self.settings.setValue('importer/current_config', self.config_cmb.currentText())
         self.settings.setValue('importer/current_path', self.path_cmb.currentText())
         self.settings.setValue('importer/include_subfolders', self.subfolders_chk.isChecked())
+        self.settings.setValue('importer/on_conflict', self.conflict_cmb.currentText())
+        self.settings.setValue('importer/assign_materials', self.assign_chk.isChecked())
 
     def load_settings(self):
         logging.debug('load_settings')
@@ -239,19 +246,25 @@ class ImporterDialog(QtWidgets.QDialog):
         if self.settings.value('importer_dialog/size'):
             self.resize(self.settings.value('importer_dialog/size'))
 
+        for path in self.settings.list('importer/recent_paths'):
+            self.path_cmb.addItem(path)
+
         index = self.config_cmb.findText(self.settings.value('importer/current_config', ''))
         self.config_cmb.blockSignals(True)
         self.config_cmb.setCurrentIndex(max(0, index))
         self.config_cmb.blockSignals(False)
         self.config_cmb.currentTextChanged.emit(self.config_cmb.currentText())
 
-        for path in self.settings.list('importer/recent_paths'):
-            self.path_cmb.addItem(path)
-
         index = self.path_cmb.findText(self.settings.value('importer/current_path', ''))
         self.path_cmb.setCurrentIndex(max(0, index))
 
         self.subfolders_chk.setChecked(self.settings.bool('importer/include_subfolders'))
+
+        current_index = self.conflict_cmb.findText(self.settings.value('importer/on_conflict', ''))
+        current_index = max(0, current_index)
+        self.conflict_cmb.setCurrentIndex(current_index)
+
+        self.assign_chk.setChecked(self.settings.bool('importer/assign_materials'))
 
     def edit_settings(self):
         os.startfile(self.settings.fileName())
@@ -281,6 +294,9 @@ class ImporterDialog(QtWidgets.QDialog):
             self._configs[config.name] = config
             self.update_config_cmb()
             self.config_cmb.setCurrentText(config.name)
+
+    def update(self):
+        setup.Installer.update(self.dcc)
 
 
 class ListWidget(QtWidgets.QWidget):
@@ -501,7 +517,7 @@ class ChannelWidget(QtWidgets.QWidget):
         self._load_ui()
 
     def _load_ui(self):
-        load_ui(self, 'channel_widget.ui')
+        gui_utils.load_ui(self, 'channel_widget.ui')
 
         self.attribute_cmb.setCurrentIndex(-1)
         self.attribute_cmb.currentIndexChanged.emit(0)
@@ -575,11 +591,12 @@ class ConfigWidget(QtWidgets.QWidget):
 
         self.dcc = dcc
         self.renderers = plugin_utils.render_plugins(self.dcc)
+        self.importer = importer.Importer()
 
         self._load_ui()
 
     def _load_ui(self):
-        load_ui(self, 'config_widget.ui')
+        gui_utils.load_ui(self, 'config_widget.ui')
 
         for renderer in self.renderers.keys():
             self.renderer_cmb.addItem(renderer.title(), renderer)
@@ -592,7 +609,6 @@ class ConfigWidget(QtWidgets.QWidget):
         self.list_wdg.items_changed.connect(self.list_items_changed)
 
     def list_items_changed(self, item):
-        logging.debug('list_items_changed')
         if item is not None:
             item.widget.attribute_cmb.currentIndexChanged.connect(self.lock_channels)
             item.widget.attributes = self.importer.attributes
@@ -600,18 +616,18 @@ class ConfigWidget(QtWidgets.QWidget):
         self.lock_channels()
 
     def renderer_changed(self, text=None):
-        logging.debug('renderer_changed')
         renderer = self.renderer_cmb.currentData()
-        if not renderer:
-            return
-        logging.debug(('renderer changed', renderer))
-        self.importer = importer.Importer.from_plugin(self.dcc, renderer)
-        for item in self.list_wdg.items():
-            item.widget.attributes = self.importer.attributes
+        if renderer:
+            logging.debug('renderer_changed')
+            plugin = '{}_{}'.format(self.dcc, renderer)
+            self.importer = importer.Importer.from_plugin(plugin)
+
+            for item in self.list_wdg.items():
+                item.widget.attributes = self.importer.attributes
+                item.widget.colorspaces = self.importer.colorspaces
 
     def lock_channels(self):
         # find a better name for this. The function enables unused / disables used items.
-        logging.debug('lock_channels')
         used_channels = []
         for item in self.list_wdg.items():
             attribute_cmb = item.widget.attribute_cmb
@@ -641,7 +657,8 @@ class ConfigWidget(QtWidgets.QWidget):
         logging.debug(('set_config', config.name))
 
         self.reset_config()
-        self.renderer_cmb.setCurrentText(config.renderer.title())
+        if config.renderer:
+            self.renderer_cmb.setCurrentText(config.renderer.title())
 
         for channel in config.channels:
             item = self.list_wdg.add_item()
@@ -655,4 +672,4 @@ class ConfigWidget(QtWidgets.QWidget):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    show(ImporterDialog)
+    gui_utils.show(ImporterDialog)
