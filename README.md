@@ -1,7 +1,7 @@
 # texture-importer
 A texture importer tool that creates material networks
 
-## Installation for Maya##
+## Installation for Maya
 
 1. Click on the code button above and download the package as a .zip file.
 2. Unpack the zip archive.
@@ -14,6 +14,6 @@ from textureimporter.plugins.maya import run
 main_window = run()
 ```
 
-## Configs ##
+## Configs
 
 Configs are presets that store different patterns for texture names.
