@@ -92,8 +92,9 @@ class ImporterDialog(QtWidgets.QDialog):
 
         menu = QtWidgets.QMenu('Help')
         action = menu.addAction('Documentation')
-        action = menu.addAction('About')
-        action = menu.addAction('Update Textureimporter')
+        action.triggered.connect(self.documentation)
+
+        action = menu.addAction('Update')
         action.triggered.connect(self.update)
         menu_bar.addMenu(menu)
         self.layout().setMenuBar(menu_bar)
@@ -351,6 +352,10 @@ class ImporterDialog(QtWidgets.QDialog):
                 'Update failed. Please see log.',
                 QtWidgets.QMessageBox.Ok)
         self.close()
+
+    def documentation(self):
+        import webbrowser
+        webbrowser.open('https://github.com/beatreichenbach/texture-importer')
 
 
 class ListWidget(QtWidgets.QWidget):
