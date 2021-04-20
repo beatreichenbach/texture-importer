@@ -13,8 +13,12 @@ except ImportError:
     import urllib2 as urllib
 from contextlib import closing
 
-from textureimporter import plugin_utils
-from textureimporter import utils
+try:
+    from textureimporter import plugin_utils
+    from textureimporter import utils
+except ImportError:
+    import plugin_utils
+    import utils
 
 
 class Installer(object):
@@ -133,4 +137,3 @@ class Installer(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     installer_ = Installer()
-    installer_.install_package(r'D:\files\settings\maya\scripts')

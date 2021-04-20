@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>773</width>
-    <height>608</height>
+    <width>817</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,20 @@
   <layout class="QVBoxLayout" name="main_lay">
    <item>
     <layout class="QGridLayout" name="parameters_lay" columnstretch="0,1,0">
+     <item row="1" column="1">
+      <widget class="QComboBox" name="config_cmb">
+       <property name="maxVisibleItems">
+        <number>20</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="config_lbl">
+       <property name="text">
+        <string>Config</string>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="1">
       <widget class="QComboBox" name="path_cmb">
        <property name="maxVisibleItems">
@@ -23,17 +37,17 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="path_browse_btn">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="path_lbl">
        <property name="text">
         <string>Path</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="path_browse_btn">
+       <property name="text">
+        <string>...</string>
        </property>
       </widget>
      </item>
@@ -54,29 +68,15 @@
        <property name="popupMode">
         <enum>QToolButton::MenuButtonPopup</enum>
        </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextOnly</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="config_cmb">
-       <property name="maxVisibleItems">
-        <number>20</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="config_lbl">
-       <property name="text">
-        <string>Config</string>
-       </property>
       </widget>
      </item>
     </layout>
    </item>
    <item>
     <widget class="QScrollArea" name="config_scroll">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -85,8 +85,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>753</width>
-        <height>423</height>
+        <width>797</width>
+        <height>422</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="config_lay"/>
@@ -95,6 +95,12 @@
    </item>
    <item>
     <widget class="QCheckBox" name="subfolders_chk">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="toolTip">
+      <string>This feature is currently not supported.</string>
+     </property>
      <property name="text">
       <string>Include Sub Folders</string>
      </property>
@@ -113,11 +119,6 @@
       <widget class="QComboBox" name="conflict_cmb">
        <item>
         <property name="text">
-         <string>Update Existing Nodes</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
          <string>Replace Exising Nodes</string>
         </property>
        </item>
@@ -133,7 +134,7 @@
    <item>
     <widget class="QCheckBox" name="assign_chk">
      <property name="text">
-      <string>Assign Materials to Selection (Only Applies When Using $mesh)</string>
+      <string>Assign Materials to Selection</string>
      </property>
     </widget>
    </item>

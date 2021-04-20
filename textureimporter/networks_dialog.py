@@ -18,6 +18,8 @@ class NetworksDialog(QtWidgets.QDialog):
     def init_ui(self):
         gui_utils.load_ui(self, 'networks_dialog.ui')
 
+        self.resize(800, 600)
+
         placeholder = self.networks_tree
         self.networks_tree = NetworksTreeWidget(self.networks_tree)
         self.networks_tree.setHeaderLabels(('Material', 'Node Name', 'Exists', 'File Name'))
@@ -118,6 +120,8 @@ class NetworksTreeWidget(QtWidgets.QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
+        self.setStyleSheet('QTreeWidget::item {padding: 5px 20px;}')
+
     def check_all_items(self, checkstate):
         for i in range(self.topLevelItemCount()):
             item = self.topLevelItem(i)
@@ -165,9 +169,11 @@ class NetworksTreeWidget(QtWidgets.QTreeWidget):
             if channel.exists:
                 icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
                 child.setCheckState(0, QtCore.Qt.Unchecked)
+                child.setToolTip(2, 'This node already exists in the scene.')
             else:
                 icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
                 child.setCheckState(0, QtCore.Qt.Checked)
+                child.setToolTip(2, 'This node doesn\'t exist in the scene.')
             child.setSortData(2, channel.exists)
             child.setIcon(2, icon)
 
@@ -176,10 +182,10 @@ class NetworksTreeWidget(QtWidgets.QTreeWidget):
         item.addChildren(children)
         self.addTopLevelItem(item)
 
-        # self.materials_tree.expandAll()
-        # for i in range(self.materials_tree.header().count()):
-        #     self.materials_tree.resizeColumnToContents(i)
-        # self.materials_tree.collapseAll()
+        self.expandAll()
+        for i in range(self.header().count()):
+            self.resizeColumnToContents(i)
+        self.collapseAll()
 
 
 if __name__ == '__main__':

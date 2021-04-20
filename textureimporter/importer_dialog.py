@@ -26,11 +26,13 @@ class ImporterDialog(QtWidgets.QDialog):
         self.init_ui()
         self.update_config_cmb()
 
-        self._connect_ui()
+        self.connect_ui()
         self.load_settings()
 
     def init_ui(self):
         gui_utils.load_ui(self, 'importer_dialog.ui')
+
+        self.resize(800, 600)
 
         self.config_wdg = ConfigWidget(self, self.dcc)
         self.config_scroll.setWidget(self.config_wdg)
@@ -54,14 +56,30 @@ class ImporterDialog(QtWidgets.QDialog):
         action.triggered.connect(self.delete_config)
         self.config_btn.setMenu(menu)
 
+        if self.dcc == 'maya':
+            frame = QtWidgets.QFrame()
+            frame.setParent(self)
+            frame.setContentsMargins(0, 0, 0, 0)
+            frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+            frame.setFrameShadow(QtWidgets.QFrame.Plain)
+            layout = QtWidgets.QHBoxLayout()
+            layout.setContentsMargins(0, 0, 0, 0)
+            frame.setLayout(layout)
+            self.parameters_lay.replaceWidget(self.config_btn, frame)
+            layout.addWidget(self.config_btn)
+
         # Menu Bar
         menu_bar = QtWidgets.QMenuBar(self)
         menu = QtWidgets.QMenu('File')
         action = menu.addAction('Import Config')
         action.triggered.connect(self.import_config)
 
-        action = menu.addAction('Edit Configs')
-        action.triggered.connect(self.edit_configs)
+        action = menu.addAction('Open Configs Directory')
+        action.triggered.connect(self.open_configs_dir)
+        menu_bar.addMenu(menu)
+
+        action = menu.addAction('Open Scripts Directory')
+        action.triggered.connect(self.open_scripts_dir)
         menu_bar.addMenu(menu)
 
         menu = QtWidgets.QMenu('Settings')
@@ -85,7 +103,16 @@ class ImporterDialog(QtWidgets.QDialog):
         size_policy.setRetainSizeWhenHidden(True)
         self.main_prgbar.setSizePolicy(size_policy)
 
-    def _connect_ui(self):
+        self.status_bar = QtWidgets.QStatusBar()
+        color = self.palette().color(QtGui.QPalette.Highlight)
+        logging.debug(color)
+        # self.status_bar.setStyleSheet('background-color: rgb(0, 255, 0);')
+        self.status_bar.setSizeGripEnabled(False)
+        self.footer_lay.insertWidget(0, self.status_bar)
+        self.footer_lay.setStretch(0, 1)
+        self.footer_lay.setStretch(1, 0)
+
+    def connect_ui(self):
         self.path_browse_btn.clicked.connect(self.browse_path)
         self.config_cmb.currentTextChanged.connect(self.config_changed)
 
@@ -130,6 +157,8 @@ class ImporterDialog(QtWidgets.QDialog):
         self.update_config_cmb()
         self.config_cmb.setCurrentText(name)
 
+        self.status_bar.showMessage('Config Saved.', 1000)
+
     def save_config_as(self):
         name, result = QtWidgets.QInputDialog.getText(
             self, 'Save As...', 'Config:', text=self.config_cmb.currentText())
@@ -145,10 +174,16 @@ class ImporterDialog(QtWidgets.QDialog):
 
     def delete_config(self):
         name = self.config_cmb.currentText()
-        del self._configs[name]
-        os.remove(os.path.join(self.settings.configs_path, '{}.json'.format(name)))
-        self.update_config_cmb()
-        self.config_cmb.setCurrentIndex(0)
+        result = QtWidgets.QMessageBox.question(
+            self,
+            'Delete Config',
+            'Are you sure you want to delete the config "{}"?'.format(name),
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        if result == QtWidgets.QMessageBox.Yes:
+            del self._configs[name]
+            os.remove(os.path.join(self.settings.configs_path, '{}.json'.format(name)))
+            self.update_config_cmb()
+            self.config_cmb.setCurrentIndex(0)
 
     def load_config(self, name):
         logging.debug(('load_config', name))
@@ -279,8 +314,11 @@ class ImporterDialog(QtWidgets.QDialog):
         if result == QtWidgets.QMessageBox.Yes:
             self.settings.clear()
 
-    def edit_configs(self):
+    def open_configs_dir(self):
         os.startfile(self.settings.configs_path)
+
+    def open_scripts_dir(self):
+        os.startfile(os.path.dirname(__file__))
 
     def import_config(self):
         path, file_filter = QtWidgets.QFileDialog.getOpenFileName(
@@ -295,6 +333,8 @@ class ImporterDialog(QtWidgets.QDialog):
             self._configs[config.name] = config
             self.update_config_cmb()
             self.config_cmb.setCurrentText(config.name)
+
+            self.status_bar.showMessage('Config Imported.', 1000)
 
     def update(self):
         result = setup.Installer.update(self.dcc)
