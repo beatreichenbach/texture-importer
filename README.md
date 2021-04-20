@@ -8,7 +8,7 @@ A texture importer tool that creates material networks
 3. Drag the setup_maya.mel file into the viewport of maya.
 4. This creates a button on the shelf that can be used to launch the tool.
 
-If you prefer to install the package manually, just make sure that the textureimporter directory can be loaded as a python package by maya and call the tool with the following code:
+If preferred the package can be installed manually by moving it into a location where the textureimporter directory can be loaded as a python package by maya. The tool can then be ran with the following code:
 ```
 from textureimporter.plugins.maya import run
 main_window = run()
