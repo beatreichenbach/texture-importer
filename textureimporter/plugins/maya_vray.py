@@ -155,13 +155,16 @@ class Importer(maya.Importer):
             cmds.connectAttr(out_connection, in_connection, force=True)
             cmds.setAttr('{}.bumpMapType'.format(material_node), 1)
         elif material_attribute == 'displacement':
-            # catch error
-            shadingengine_node = cmds.listConnections('{}.outColor', destination=True)[0]
+            # instead of getting the shadingengine, this should actually use the
+            # shadingengine from the create_material function
+            outputs = cmds.listConnections(
+                '{}.outColor'.format(material_node), destination=True, source=False, type='shadingEngine')
+            if outputs:
+                shadingengine_node = outputs[-1]
 
-            out_connection = '{}.outColor'.format(file_node)
-            in_connection = '{}.displacementShader'.format(shadingengine_node)
-            cmds.connectAttr(out_connection, in_connection, force=True)
-
+                out_connection = '{}.outColor'.format(file_node)
+                in_connection = '{}.displacementShader'.format(shadingengine_node)
+                cmds.connectAttr(out_connection, in_connection, force=True)
         else:
             if cmds.getAttr('{}.{}'.format(material_node, material_attribute), type=True) == 'float':
                 cmds.setAttr('{}.alphaIsLuminance'.format(file_node), True)
