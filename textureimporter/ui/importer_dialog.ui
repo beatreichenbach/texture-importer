@@ -95,9 +95,6 @@
    </item>
    <item>
     <widget class="QCheckBox" name="subfolders_chk">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
      <property name="toolTip">
       <string>This feature is currently not supported.</string>
      </property>
@@ -116,18 +113,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="conflict_cmb">
-       <item>
-        <property name="text">
-         <string>Replace Exising Nodes</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Rename Nodes</string>
-        </property>
-       </item>
-      </widget>
+      <widget class="QComboBox" name="conflict_cmb"/>
      </item>
     </layout>
    </item>

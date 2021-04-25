@@ -83,42 +83,12 @@ class Settings(QtCore.QSettings):
         self.init_defaults()
 
 
-class Config(object):
-    def __init__(self, name=''):
-        self.name = name
-        self.renderer = None
-        self.channels = []
-
-    @classmethod
-    def from_json(cls, json_path):
-        with open(json_path) as f:
-            name, extension = os.path.splitext(os.path.basename(json_path))
-            data = json.load(f)
-
-        config = cls(name)
-
-        config.renderer = data.get('renderer', '')
-
-        for item in data.get('channels', []):
-            channel = ConfigChannel(
-                attribute=item.get('attribute', ''),
-                pattern=item.get('pattern', ''),
-                colorspace=item.get('colorspace', ''))
-            config.channels.append(channel)
-
-        return config
-
-    def to_json(self, json_path):
-        json_data = to_dict(self)
-        with open(json_path, 'w') as f:
-            json.dump(json_data, f, indent=4)
+class NoSelectionException(Exception):
+    message = 'Nothing selected.'
 
 
-class ConfigChannel(object):
-    def __init__(self, attribute='', pattern='', colorspace=''):
-        self.attribute = attribute
-        self.pattern = pattern
-        self.colorspace = colorspace
+class NotFoundException(Exception):
+    message = 'Not found.'
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ import os
 import re
 import glob
 import logging
+import shutil
 
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -10,6 +11,7 @@ import networks_dialog
 import gui_utils
 import plugin_utils
 import utils
+from utils import NotFoundException, NoSelectionException
 import setup
 
 
@@ -78,7 +80,7 @@ class ImporterDialog(QtWidgets.QDialog):
         action.triggered.connect(self.open_configs_dir)
         menu_bar.addMenu(menu)
 
-        action = menu.addAction('Open Scripts Directory')
+        action = menu.addAction('Open Script Directory')
         action.triggered.connect(self.open_scripts_dir)
         menu_bar.addMenu(menu)
 
@@ -99,15 +101,22 @@ class ImporterDialog(QtWidgets.QDialog):
         menu_bar.addMenu(menu)
         self.layout().setMenuBar(menu_bar)
 
+        self.subfolders_chk.setVisible(False)
+
+        conflict_options = {
+            'remove': 'Remove Existing Nodes',
+            'replace': 'Replace Existing Nodes with Connections',
+            'rename': 'Rename Nodes',
+        }
+        for name, label in conflict_options.items():
+            self.conflict_cmb.addItem(label, name)
+
         self.main_prgbar.setVisible(False)
         size_policy = self.main_prgbar.sizePolicy()
         size_policy.setRetainSizeWhenHidden(True)
         self.main_prgbar.setSizePolicy(size_policy)
 
         self.status_bar = QtWidgets.QStatusBar()
-        color = self.palette().color(QtGui.QPalette.Highlight)
-        logging.debug(color)
-        # self.status_bar.setStyleSheet('background-color: rgb(0, 255, 0);')
         self.status_bar.setSizeGripEnabled(False)
         self.footer_lay.insertWidget(0, self.status_bar)
         self.footer_lay.setStretch(0, 1)
@@ -135,7 +144,7 @@ class ImporterDialog(QtWidgets.QDialog):
                 m = re.search(r'\d+$', name)
                 name = re.sub(r'\d+$', lambda m: str(int(m.group()) + 1), name) if m else name + '1'
 
-            config = utils.Config(name)
+            config = importer.Config(name)
             self.config_cmb.insertItem(0, name, config)
             self.config_cmb.setCurrentIndex(0)
             self.config_wdg.list_wdg.clear()
@@ -211,8 +220,9 @@ class ImporterDialog(QtWidgets.QDialog):
         # handle broken ass json files
         self._configs = {}
         for path in glob.glob(os.path.join(self.settings.configs_path, '*.json')):
-            config = utils.Config.from_json(path)
-            self._configs[config.name] = config
+            config = importer.Config.from_json(path)
+            if config:
+                self._configs[config.name] = config
 
     def browse_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(dir=self.path_cmb.currentText())
@@ -226,7 +236,8 @@ class ImporterDialog(QtWidgets.QDialog):
                 self.path_cmb.removeItem(self.path_cmb.findText(path))
 
             recent.insert(0, path)
-            self.settings.setValue('importer/recent_paths', recent[:9])
+            max_num_paths = int(self.settings.value('user/num_recent_paths', 10))
+            self.settings.setValue('importer/recent_paths', recent[:max_num_paths - 1])
             self.path_cmb.insertItem(0, path)
             self.path_cmb.setCurrentIndex(0)
 
@@ -241,21 +252,44 @@ class ImporterDialog(QtWidgets.QDialog):
         plugin = '{}_{}'.format(self.dcc, config.renderer)
         self.importer = importer.Importer.from_plugin(plugin)
 
-        networks = self.importer.get_networks(path, config, include_subfolders)
-        if not networks:
+        try:
+            self.importer.load_plugin()
+        except RuntimeError:
+            QtWidgets.QMessageBox.warning(
+                self,
+                'Plugin Load Error',
+                'Unable to load plugin: {}'.format(self.importer.plugin_name),
+                QtWidgets.QMessageBox.Ok)
+            return
+
+        try:
+            networks = self.importer.get_networks(path, config, include_subfolders)
+        except NoSelectionException:
+            QtWidgets.QMessageBox.information(
+                self,
+                'Nothing Selected',
+                'No meshes selected.\nA pattern in the config contains "$mesh".',
+                QtWidgets.QMessageBox.Ok)
+            return
+        except NotFoundException:
             QtWidgets.QMessageBox.information(
                 self,
                 'Nothing to Import',
-                'There were no textures found to import with the current config.',
+                'No textures found.',
                 QtWidgets.QMessageBox.Ok)
             return
 
         networks = networks_dialog.NetworksDialog.selected_networks(networks)
-        for network in networks:
-            self.importer.create_network(network)
 
-        # if result:
-        #    super(ImporterDialog, self).accept()
+        kwargs = {
+            'on_conflict': self.conflict_cmb.currentData(),
+            'assign_material': self.assign_chk.isChecked()
+        }
+
+        for network in networks:
+            self.importer.create_network(network, **kwargs)
+
+        self.status_bar.showMessage('Successfully created all shading networks', 2000)
 
     def reject(self):
         self.save_settings()
@@ -273,7 +307,7 @@ class ImporterDialog(QtWidgets.QDialog):
         self.settings.setValue('importer/current_config', self.config_cmb.currentText())
         self.settings.setValue('importer/current_path', self.path_cmb.currentText())
         self.settings.setValue('importer/include_subfolders', self.subfolders_chk.isChecked())
-        self.settings.setValue('importer/on_conflict', self.conflict_cmb.currentText())
+        self.settings.setValue('importer/on_conflict', self.conflict_cmb.currentData())
         self.settings.setValue('importer/assign_materials', self.assign_chk.isChecked())
 
     def load_settings(self):
@@ -283,7 +317,8 @@ class ImporterDialog(QtWidgets.QDialog):
         if self.settings.value('importer_dialog/size'):
             self.resize(self.settings.value('importer_dialog/size'))
 
-        for path in self.settings.list('importer/recent_paths'):
+        max_num_paths = int(self.settings.value('user/num_recent_paths', 10))
+        for path in self.settings.list('importer/recent_paths')[:max_num_paths - 1]:
             self.path_cmb.addItem(path)
 
         index = self.config_cmb.findText(self.settings.value('importer/current_config', ''))
@@ -297,7 +332,7 @@ class ImporterDialog(QtWidgets.QDialog):
 
         self.subfolders_chk.setChecked(self.settings.bool('importer/include_subfolders'))
 
-        current_index = self.conflict_cmb.findText(self.settings.value('importer/on_conflict', ''))
+        current_index = self.conflict_cmb.findData(self.settings.value('importer/on_conflict', ''))
         current_index = max(0, current_index)
         self.conflict_cmb.setCurrentIndex(current_index)
 
@@ -326,16 +361,37 @@ class ImporterDialog(QtWidgets.QDialog):
             caption='Import Config',
             dir=self.settings.configs_path,
             filter='Configs (*.json)')
-        if path:
-            import shutil
-            logging.debug(path)
-            config_path = shutil.copy2(path, self.settings.configs_path)
-            config = utils.Config.from_json(config_path)
+        if not path:
+            return
+
+        logging.debug(path)
+
+        file_name = os.path.basename(path)
+        config_path = os.path.join(self.settings.configs_path, file_name)
+        if os.path.exists(config_path):
+            result = QtWidgets.QMessageBox.question(
+                self,
+                'Overwrite Config',
+                'The config already exists. Do you want to overwrite the file "{}"?'.format(file_name),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+            if result != QtWidgets.QMessageBox.Yes:
+                return
+
+        shutil.copy2(path, config_path)
+        config = importer.Config.from_json(config_path)
+
+        if config:
             self._configs[config.name] = config
             self.update_config_cmb()
             self.config_cmb.setCurrentText(config.name)
-
             self.status_bar.showMessage('Config Imported.', 1000)
+        else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                'Import Error',
+                'Could not import the config:\n{}'.format(path),
+                QtWidgets.QMessageBox.Ok)
+            os.remove(config_path)
 
     def update(self):
         result = setup.Installer.update(self.dcc)
@@ -593,7 +649,7 @@ class ChannelWidget(QtWidgets.QWidget):
         text = self.pattern_line.displayText()
         if self.pattern_line.selectionStart() != -1:
             start = self.pattern_line.selectionStart()
-            end = self.pattern_line.selectionStart() + self.pattern_line.selectionLength()
+            end = start + len(self.pattern_line.selectedText())
             text = text[:start] + action.text() + text[end:]
             pos = start
         else:
@@ -631,7 +687,7 @@ class ChannelWidget(QtWidgets.QWidget):
 
     @property
     def channel(self):
-        channel = utils.ConfigChannel(
+        channel = importer.ConfigChannel(
             attribute=self.attribute_cmb.currentText(),
             pattern=self.pattern_line.text(),
             colorspace=self.colorspace_cmb.currentText())
@@ -705,7 +761,7 @@ class ConfigWidget(QtWidgets.QWidget):
     def config(self):
         logging.debug('get_config')
 
-        config = utils.Config()
+        config = importer.Config()
         config.renderer = self.renderer_cmb.currentData()
         config.channels = [item.widget.channel for item in self.list_wdg.items()]
 
@@ -717,6 +773,8 @@ class ConfigWidget(QtWidgets.QWidget):
 
         self.reset_config()
         if config.renderer:
+            if self.renderer_cmb.findText(config.renderer.title()) == -1:
+                logging.error('Could not load renderer: {}'.format(config.renderer))
             self.renderer_cmb.setCurrentText(config.renderer.title())
 
         for channel in config.channels:

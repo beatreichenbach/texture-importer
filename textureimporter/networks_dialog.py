@@ -120,7 +120,7 @@ class NetworksTreeWidget(QtWidgets.QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
-        self.setStyleSheet('QTreeWidget::item {padding: 5px 20px;}')
+        self.setStyleSheet('QTreeWidget::item {padding: 5px 20px 5px 0;}')
 
     def check_all_items(self, checkstate):
         for i in range(self.topLevelItemCount()):

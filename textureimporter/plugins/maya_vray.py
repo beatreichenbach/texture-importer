@@ -6,8 +6,11 @@ from . import maya
 
 
 class Importer(maya.Importer):
+    display_name = 'VRay'
+    plugin_name = 'vrayformaya.mll'
+
     def __init__(self):
-        self.display_name = 'VRay'
+        super(Importer, self).__init__()
 
     @property
     def attributes(self):
@@ -118,24 +121,46 @@ class Importer(maya.Importer):
             # 'attributeAliasList'
             ]
 
+        # extra attributes:
+        attrs.extend([
+            'normalMap',
+            'displacement'
+            ])
+
         return attrs
 
     def create_material(self, material_node_name, shadingengine_node_name):
-        material_node = cmds.shadingNode('VRayMtl', name=material_node_name, asShader=True)
-        shadingengine_node = cmds.sets(name=shadingengine_node_name, empty=True, renderable=True, noSurfaceShader=True)
-        cmds.connectAttr('{}.outColor'.format(material_node), '{}.surfaceShader'.format(shadingengine_node))
+        material_node = self.create_node('VRayMtl', name=material_node_name, asShader=True)
+        shadingengine_node = self.create_node(
+            'shadingEngine',
+            name=shadingengine_node_name,
+            empty=True,
+            renderable=True,
+            noSurfaceShader=True)
+
+        out_connection = '{}.outColor'.format(material_node)
+        in_connection = '{}.surfaceShader'.format(shadingengine_node)
+        cmds.connectAttr(out_connection, in_connection, force=True)
 
         return material_node, shadingengine_node
 
     def connect_file(self, file_node, material_node, material_attribute):
         if material_attribute == 'bumpMap':
-            cmds.connectAttr('{}.outColor'.format(file_node), '{}.{}'.format(material_node, material_attribute), force=True)
+            out_connection = '{}.outAlpha'.format(file_node)
+            in_connection = '{}.{}'.format(material_node, material_attribute)
+            cmds.connectAttr(out_connection, in_connection, force=True)
+        elif material_attribute == 'normalMap':
+            out_connection = '{}.outColor'.format(file_node)
+            in_connection = '{}.bumpMap'.format(material_node)
+            cmds.connectAttr(out_connection, in_connection, force=True)
             cmds.setAttr('{}.bumpMapType'.format(material_node), 1)
-
         elif material_attribute == 'displacement':
             # catch error
             shadingengine_node = cmds.listConnections('{}.outColor', destination=True)[0]
-            cmds.connectAttr('{}.outColor'.format(file_node), '{}.displacementShader'.format(shadingengine_node), force=True)
+
+            out_connection = '{}.outColor'.format(file_node)
+            in_connection = '{}.displacementShader'.format(shadingengine_node)
+            cmds.connectAttr(out_connection, in_connection, force=True)
 
         else:
             if cmds.getAttr('{}.{}'.format(material_node, material_attribute), type=True) == 'float':
@@ -143,4 +168,7 @@ class Importer(maya.Importer):
                 file_attribute = 'outAlpha'
             else:
                 file_attribute = 'outColor'
-            cmds.connectAttr('{}.{}'.format(file_node, file_attribute), '{}.{}'.format(material_node, material_attribute), force=True)
+
+            out_connection = '{}.{}'.format(file_node, file_attribute)
+            in_connection = '{}.{}'.format(material_node, material_attribute)
+            cmds.connectAttr(out_connection, in_connection, force=True)

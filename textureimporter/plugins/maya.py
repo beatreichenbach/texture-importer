@@ -18,13 +18,15 @@ def run():
 
 
 class Importer(importer.Importer):
-    display_name = 'Maya Renderer'
-    material_node_pattern = '{}_mat'
-    shadingengine_node_pattern = '{}_sg'
-    file_node_pattern = '{}_tex'
-    place_node_pattern = '{}_place'
-    normal_node_pattern = '{}_normal'
-    default_name = 'default'
+    settings_group = 'maya'
+    settings_defaults = {
+        'material_node_pattern': '{}_mat',
+        'shadingengine_node_pattern': '{}_sg',
+        'file_node_pattern': '{}_tex',
+        'place_node_pattern': '{}_place',
+        'normal_node_pattern': '{}_normal',
+        'default_name': 'default',
+        }
 
     def __init__(self):
         super(Importer, self).__init__()
@@ -55,41 +57,83 @@ class Importer(importer.Importer):
 
         return colorspaces
 
-    def get_selection(self):
+    def load_plugin(self):
+        if not (cmds.pluginInfo(self.plugin_name, query=True, loaded=True)):
+            cmds.loadPlugin(self.plugin_name)
+
+    def get_meshes(self):
         meshes = cmds.ls(selection=True, long=True)
-        meshes = [(mesh.rsplit('|')[-1], mesh) for mesh in meshes]
-        logging.debug(meshes)
+        meshes = [Mesh(mesh) for mesh in meshes]
         return meshes
 
     def exists(self, node_name):
         return cmds.objExists(node_name)
 
-    def create_network(self, network):
-        shadingengine_node_name = self.shadingengine_node_pattern.format(network.material_name)
+    def create_network(self, network, **kwargs):
+        self.current_network = network
+        self.current_kwargs = kwargs
+        selection = cmds.ls(selection=True)
+
+        set_members = []
+        if kwargs.get('assign_material') and self.exists(network.material_node_name):
+            # store material assignments
+
+            outputs = cmds.listConnections(
+                network.material_node_name, destination=True, source=False, type='shadingEngine')
+            if outputs:
+                shadingengine_node = outputs[0]
+                set_members = cmds.listConnections(
+                    '{}.dagSetMembers'.format(shadingengine_node), destination=False, source=True)
+
+        shadingengine_node_name = self.resolve_name('shadingengine_node_pattern', network.material_name)
         material_node, shadingengine_node = self.create_material(network.material_node_name, shadingengine_node_name)
 
-        place_name = self.place_node_pattern.format(network.material_name)
+        place_name = self.resolve_name('place_node_pattern', network.material_name)
         place_node = self.create_place(place_name)
 
         for channel in network.channels:
-            # catch errors incase attribute doesn't exist ya know?
-            attribute_name = channel.attribute_name
-
             file_node = self.create_file(channel.file_node_name, channel.file_path, channel.colorspace)
             self.connect_place(place_node, file_node)
-            self.connect_file(file_node, material_node, attribute_name)
 
-        # self.assign_material(material_node, network.mesh_name)
+            attribute_name = channel.attribute_name
+            try:
+                self.connect_file(file_node, material_node, attribute_name)
+            except RuntimeError:
+                logging.error(
+                    'Could not connect material attribute: '
+                    '{}.{}'.format(material_node, attribute_name))
+
+        cmds.select(selection, replace=True)
+        if kwargs.get('assign_material'):
+            if set_members:
+                for set_member in set_members:
+                    self.assign_material(material_node, set_member)
+            elif network.mesh:
+                self.assign_material(material_node, network.mesh)
+            else:
+                self.assign_material(material_node, [mesh.mesh for mesh in self.get_meshes()])
+
+        cmds.select(selection, replace=True)
+        self.current_network = None
+        self.current_kwargs = None
 
     def create_material(self, material_node_name, shadingengine_node_name):
-        material_node = cmds.shadingNode('lambert', name=material_node_name, asShader=True)
-        shadingengine_node = cmds.sets(name=shadingengine_node_name, empty=True, renderable=True, noSurfaceShader=True)
-        cmds.connectAttr('{}.outColor'.format(material_node), '{}.surfaceShader'.format(shadingengine_node))
+        material_node = self.create_node('lambert', name=material_node_name, asShader=True)
+        shadingengine_node = self.create_node(
+            'shadingEngine',
+            name=shadingengine_node_name,
+            empty=True,
+            renderable=True,
+            noSurfaceShader=True)
+
+        out_connection = '{}.outColor'.format(material_node)
+        in_connection = '{}.surfaceShader'.format(shadingengine_node)
+        cmds.connectAttr(out_connection, in_connection, force=True)
 
         return material_node, shadingengine_node
 
     def create_file(self, name, file_path, colorspace):
-        file_node = cmds.shadingNode('file', name=name, asTexture=True, isColorManaged=True)
+        file_node = self.create_node('file', name=name, asTexture=True, isColorManaged=True)
         cmds.setAttr('{}.fileTextureName'.format(file_node), file_path, type='string')
         if '<UDIM>' in file_path:
             cmds.setAttr('{}.uvTilingMode'.format(file_node), 3)
@@ -99,7 +143,7 @@ class Importer(importer.Importer):
         return file_node
 
     def create_place(self, name):
-        place_node = cmds.shadingNode('place2dTexture', name=name, asUtility=True)
+        place_node = self.create_node('place2dTexture', name=name, asUtility=True)
 
         return place_node
 
@@ -125,7 +169,9 @@ class Importer(importer.Importer):
             ('wrapV', 'wrapV')]
 
         for place_attr, file_attribute in attributes:
-            cmds.connectAttr('{}.{}'.format(place_node, place_attr), '{}.{}'.format(file_node, file_attribute))
+            out_connection = '{}.{}'.format(place_node, place_attr)
+            in_connection = '{}.{}'.format(file_node, file_attribute)
+            cmds.connectAttr(out_connection, in_connection, force=True)
 
     def connect_file(self, file_node, material_node, material_attribute):
         if cmds.getAttr('{}.{}'.format(material_node, material_attribute), type=True) == 'float':
@@ -133,12 +179,59 @@ class Importer(importer.Importer):
             file_attribute = 'outAlpha'
         else:
             file_attribute = 'outColor'
-        cmds.connectAttr('{}.{}'.format(file_node, file_attribute), '{}.{}'.format(material_node, material_attribute), force=True)
+
+        out_connection = '{}.{}'.format(file_node, file_attribute)
+        in_connection = '{}.{}'.format(material_node, material_attribute)
+        cmds.connectAttr(out_connection, in_connection, force=True)
+
+    def create_node(self, node_type, **kwargs):
+        if node_type == 'shadingEngine':
+            node = cmds.sets(**kwargs)
+        else:
+            node = cmds.shadingNode(node_type, **kwargs)
+
+        on_conflict = self.current_kwargs.get('on_conflict')
+        if on_conflict in ('replace', 'remove'):
+            name = kwargs.get('name')
+            if node != name:
+                old_node = name
+                out_connections = cmds.listConnections(
+                    old_node, destination=True, source=False, connections=True, plugs=True)
+                cmds.delete(old_node)
+                node = cmds.rename(node, name)
+
+                if on_conflict == 'remove':
+                    return node
+
+                for i in range(0, len(out_connections), 2):
+                    source = out_connections[i]
+                    destination = out_connections[i + 1]
+
+                    try:
+                        # only connect if the attribute is valid and not already connected
+                        valid_attr = source.split('.')[-1] not in ('message', 'partition')
+                        not_connected = not cmds.isConnected(source, destination)
+                        if valid_attr and not_connected:
+                            cmds.connectAttr(source, destination, force=True)
+                    except (RuntimeError, ValueError):
+                        pass
+        return node
 
     def assign_material(self, material, mesh):
+        logging.debug('assign_material')
+        selection = cmds.ls(selection=True)
         cmds.select(mesh, replace=True)
+        logging.debug(mesh)
         if cmds.ls(selection=True):
-            cmds.hyperShade(material, assign=True)
+            cmds.hyperShade(assign=material)
+        cmds.select(selection, replace=True)
+
+
+class Mesh(importer.Mesh):
+    @property
+    def name(self):
+        name = str(self.mesh.rsplit('|')[-1])
+        return name
 
 
 class Installer(setup.Installer):

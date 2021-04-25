@@ -6,8 +6,11 @@ from . import maya
 
 
 class Importer(maya.Importer):
+    display_name = 'Redshift'
+    plugin_name = 'redshift4maya.mll'
+
     def __init__(self):
-        self.display_name = 'Arnold'
+        super(Importer, self).__init__()
 
     @property
     def attributes(self):
@@ -123,28 +126,58 @@ class Importer(maya.Importer):
             # 'anisotropy_orientation'
             ]
 
+        # extra attributes:
+        attrs.extend([
+            'normal_input',
+            'displacement'
+            ])
+
         return attrs
 
     def create_material(self, material_node_name, shadingengine_node_name):
-        material_node = cmds.shadingNode('RedshiftMaterial', name=material_node_name, asShader=True)
-        shadingengine_node = cmds.sets(name=shadingengine_node_name, empty=True, renderable=True, noSurfaceShader=True)
-        cmds.connectAttr('{}.outColor'.format(material_node), '{}.surfaceShader'.format(shadingengine_node))
+        material_node = self.create_node('RedshiftMaterial', name=material_node_name, asShader=True)
+        shadingengine_node = self.create_node(
+            'shadingEngine',
+            name=shadingengine_node_name,
+            empty=True,
+            renderable=True,
+            noSurfaceShader=True)
+
+        out_connection = '{}.outColor'.format(material_node)
+        in_connection = '{}.surfaceShader'.format(shadingengine_node)
+        cmds.connectAttr(out_connection, in_connection, force=True)
 
         return material_node, shadingengine_node
 
     def connect_file(self, file_node, material_node, material_attribute):
-        if material_attribute == 'bump_input':
-            material_name = material_node.replace(self.material_node_pattern, '') #this is some bad juju
-            normal_node_name = self.normal_node_pattern.format(material_name)
+        if material_attribute == 'normal_input':
+            normal_node_name = self.resolve_name('normal_node_pattern', self.current_network.material_name)
             normal_node = cmds.shadingNode('RedshiftBumpMap', name=normal_node_name, asUtility=True)
-            cmds.setAttr('{}.inputType'.format(normal_node), 1)
-            cmds.connectAttr('{}.outColor'.format(file_node), '{}.input'.format(normal_node), force=True)
-            cmds.connectAttr('{}.out'.format(normal_node), '{}.{}'.format(material_node, material_attribute), force=True)
 
+            out_connection = '{}.outColor'.format(file_node)
+            in_connection = '{}.input'.format(normal_node)
+            cmds.connectAttr(out_connection, in_connection, force=True)
+
+            out_connection = '{}.outValue'.format(normal_node)
+            in_connection = '{}.bump_input'.format(material_node)
+            cmds.connectAttr(out_connection, in_connection, force=True)
+        elif material_attribute == 'bump_input':
+            bump_node = self.create_node('bump2d', asUtility=True)
+
+            out_connection = '{}.outAlpha'.format(file_node)
+            in_connection = '{}.bumpValue'.format(bump_node)
+            cmds.connectAttr(out_connection, in_connection, force=True)
+
+            out_connection = '{}.outNormal'.format(bump_node)
+            in_connection = '{}.{}'.format(material_node, material_attribute)
+            cmds.connectAttr(out_connection, in_connection, force=True)
         elif material_attribute == 'displacement':
             # catch error
             shadingengine_node = cmds.listConnections('{}.outColor', destination=True)[0]
-            cmds.connectAttr('{}.outColor'.format(file_node), '{}.displacementShader'.format(shadingengine_node), force=True)
+
+            out_connection = '{}.outColor'.format(file_node)
+            in_connection = '{}.displacementShader'.format(shadingengine_node)
+            cmds.connectAttr(out_connection, in_connection, force=True)
 
         else:
             if cmds.getAttr('{}.{}'.format(material_node, material_attribute), type=True) == 'float':
@@ -152,4 +185,7 @@ class Importer(maya.Importer):
                 file_attribute = 'outAlpha'
             else:
                 file_attribute = 'outColor'
-            cmds.connectAttr('{}.{}'.format(file_node, file_attribute), '{}.{}'.format(material_node, material_attribute), force=True)
+
+            out_connection = '{}.{}'.format(file_node, file_attribute)
+            in_connection = '{}.{}'.format(material_node, material_attribute)
+            cmds.connectAttr(out_connection, in_connection, force=True)
