@@ -58,7 +58,7 @@ If this option is checked, the tool will attempt a few material assignments:
 3. The created material will be assign to the selection.
 
 ## Settings
-The important settings for the user are listed under general or the current dcc header.\
+The important settings for the user are listed under `[general]` or the current dcc header such as `[maya]`.\
 `num_crecent_paths`: The number of recent paths that are displayed\
 `configs_path`: A custom path to store config files\
 `*_node_pattern`: The pattern that is used to label that node. For example `{}_mat` will become `chrome_mat` or `M_{}_001` will become `M_chrome_001`
