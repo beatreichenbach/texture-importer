@@ -17,7 +17,7 @@ class Importer(object):
     display_name = ''
     plugin_name = ''
 
-    settings_group = 'general'
+    settings_group = ''
     settings_defaults = {
         'material_node_pattern': '{}_mat',
         'file_node_pattern': '{}_tex',

@@ -42,12 +42,11 @@ class Settings(QtCore.QSettings):
 
         self.init_defaults()
 
-        custom_configs_path = self.value('general/configs_path', '')
+        custom_configs_path = self.value('configs_path', '')
         if custom_configs_path:
             self.configs_path = custom_configs_path
 
     def init_defaults(self):
-        self.beginGroup('general')
         default_values = {
             'num_recent_paths': 10,
             'configs_path': ''
@@ -55,7 +54,6 @@ class Settings(QtCore.QSettings):
         for key, value in default_values.items():
             if key not in self.childKeys():
                 self.setValue(key, value)
-        self.endGroup()
 
     def bool(self, key):
         value = self.value(key, False)
