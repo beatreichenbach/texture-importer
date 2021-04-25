@@ -5,9 +5,6 @@ This tool imports texture files (Substance Painter, Mari, Mudbox, ...) into a dc
 Using customizable presets the tool searches a path for texture files and creates the material networks.\
 [List of supported plugins](#supported-features)
 
-![Textureimporter Dialog](images/textureimporter_dialog.jpg)
-![Textureimporter Dialog](images/networks_dialog.jpg)
-
 ## Installation for Maya
 1. Click on the code button above and download the package as a .zip file.
 2. Unpack the zip archive.
@@ -26,6 +23,8 @@ main_window = run()
 3. Set any [Options](#options).
 4. Search for textures.
 5. The next window will display all the material networks that can be created with the textures found. The Node Name column shows a preview of the newly created nodes and whether they already exist in the scene. Check the networks to be created and click Create.
+
+![Textureimporter Dialog](images/textureimporter_dialog.jpg)
 
 ## Configs
 Configs are presets that store different patterns for texture names. Configs can be organized in the menu next to the Save button and are available as .json files in the File menu. When importing textures from Substance Painter for example, just copy the same preset that is used there. Each config has a renderer associated with it and a set of channels that correspond to attributes on a material.
