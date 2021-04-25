@@ -142,7 +142,8 @@ cython_debug/
 *.sublime-workspace
 
 # Project files
+artstation
+textureimporter/settings.ini
 textureimporter/configs/*.json
 !textureimporter/configs/Arnold.json
 !textureimporter/configs/PBR Metallic Roughness.json
-textureimporter/settings.ini
