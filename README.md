@@ -17,3 +17,5 @@ main_window = run()
 ## Configs
 
 Configs are presets that store different patterns for texture names.
+
+![Textureimporter Dialog](documentation/images/textureimporter_dialog.jpg)
