@@ -143,4 +143,6 @@ cython_debug/
 
 # Project files
 textureimporter/configs/*.json
+!textureimporter/configs/Arnold.json
+!textureimporter/configs/PBR Metallic Roughness.json
 textureimporter/settings.ini

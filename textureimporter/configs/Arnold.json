@@ -1,0 +1,36 @@
+{
+    "channels": [
+        {
+            "attribute": "baseColor", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_BaseColor(.$udim).*"
+        }, 
+        {
+            "attribute": "metalness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Metalness(.$udim).*"
+        }, 
+        {
+            "attribute": "specularRoughness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Roughness(.$udim).*"
+        }, 
+        {
+            "attribute": "normalCamera", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Normal(.$udim).*"
+        }, 
+        {
+            "attribute": "displacement", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Height(.$udim).*"
+        }, 
+        {
+            "attribute": "emissionColor", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_Emissive(.$udim).*"
+        }
+    ], 
+    "name": "Arnold", 
+    "renderer": "arnold"
+}
