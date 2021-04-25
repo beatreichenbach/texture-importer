@@ -80,7 +80,7 @@ class NetworksDialog(QtWidgets.QDialog):
 
     @classmethod
     def selected_networks(cls, networks):
-        logging.info('selected_networks')
+        logging.debug('selected_networks')
         dialog = cls()
         dialog.networks_tree.add_networks(networks)
         dialog.setModal(True)
