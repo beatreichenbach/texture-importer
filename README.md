@@ -3,7 +3,7 @@ A texture importer tool that creates material networks.
 
 This tool imports texture files (Substance Painter, Mari, Mudbox, ...) into a dcc (maya, blender, 3dsMax...)\
 Using customizable presets the tool searches a path for texture files and creates the material networks.\
-[List of supported plugins](#supported-features)\
+[List of supported plugins](#supported-features)
 
 ![Textureimporter Dialog](images/textureimporter_dialog.jpg)
 ![Textureimporter Dialog](images/networks_dialog.jpg)
