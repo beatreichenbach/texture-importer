@@ -332,7 +332,8 @@ class ImporterDialog(QtWidgets.QDialog):
 
         self.subfolders_chk.setChecked(self.settings.bool('importer/include_subfolders'))
 
-        current_index = self.conflict_cmb.findData(self.settings.value('importer/on_conflict', ''))
+        on_conflict = self.settings.value('importer/on_conflict', 'rename')
+        current_index = self.conflict_cmb.findData(on_conflict)
         current_index = max(0, current_index)
         self.conflict_cmb.setCurrentIndex(current_index)
 
