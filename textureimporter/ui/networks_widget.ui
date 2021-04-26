@@ -13,7 +13,20 @@
   <property name="windowTitle">
    <string>Material Networks</string>
   </property>
-  <layout class="QVBoxLayout" name="main_lay" stretch="0,1,0,0">
+  <layout class="QVBoxLayout" name="main_lay" stretch="0,0,1,0,0">
+   <item>
+    <widget class="QPushButton" name="refresh_btn">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Search</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QHBoxLayout" name="actions_lay">
      <item>
@@ -34,13 +47,6 @@
       <widget class="QPushButton" name="check_selected_btn">
        <property name="text">
         <string>Check Selected</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="refresh_btn">
-       <property name="text">
-        <string>Refresh</string>
        </property>
       </widget>
      </item>

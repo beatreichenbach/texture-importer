@@ -128,7 +128,9 @@ class ImporterDialog(QtWidgets.QDialog):
         self.path_browse_btn.clicked.connect(self.browse_path)
         self.config_cmb.currentTextChanged.connect(self.config_changed)
 
-        self.search_btn.clicked.connect(self.accept)
+        self.networks_wdg.refresh_btn.clicked.connect(self.refresh)
+
+        self.create_btn.clicked.connect(self.accept)
         self.cancel_btn.clicked.connect(self.reject)
 
     def config_changed(self, text=None):
@@ -244,9 +246,11 @@ class ImporterDialog(QtWidgets.QDialog):
             self.path_cmb.insertItem(0, path)
             self.path_cmb.setCurrentIndex(0)
 
-    def accept(self):
+    def refresh(self):
         # self.save_config()
         self.save_settings()
+
+        self.networks_wdg.networks_tree.clear()
 
         path = self.path_cmb.currentText()
         config = self.config_cmb.currentData()
@@ -285,17 +289,19 @@ class ImporterDialog(QtWidgets.QDialog):
 
         self.networks_wdg.networks_tree.clear()
         self.networks_wdg.networks_tree.add_networks(networks)
-        # networks = networks_dialog.NetworksDialog.selected_networks(networks)
 
-        # kwargs = {
-        #     'on_conflict': self.conflict_cmb.currentData(),
-        #     'assign_material': self.assign_chk.isChecked()
-        # }
+    def accept(self):
+        networks = self.networks_wdg.selected_networks()
 
-        # for network in networks:
-        #     self.importer.create_network(network, **kwargs)
+        kwargs = {
+            'on_conflict': self.networks_wdg.conflict_cmb.currentData(),
+            'assign_material': self.networks_wdg.assign_chk.isChecked()
+        }
 
-        # self.status_bar.showMessage('Successfully created all shading networks', 2000)
+        for network in networks:
+            self.importer.create_network(network, **kwargs)
+
+        self.status_bar.showMessage('Successfully created all shading networks', 2000)
 
     def reject(self):
         self.save_settings()

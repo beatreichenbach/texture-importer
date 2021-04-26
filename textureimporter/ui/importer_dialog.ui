@@ -127,7 +127,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="search_btn">
+      <widget class="QPushButton" name="create_btn">
        <property name="text">
         <string>Create</string>
        </property>
