@@ -39,6 +39,18 @@ class ImporterDialog(QtWidgets.QDialog):
         self.config_wdg = ConfigWidget(self, self.dcc)
         self.config_scroll.setWidget(self.config_wdg)
 
+        self.networks_wdg = networks_dialog.NetworksWidget(self)
+        self.networks_scroll.setWidget(self.networks_wdg)
+
+        # self.config_scroll.deleteLater()
+        # self.networks_scroll.deleteLater()
+
+        self.splitter = QtWidgets.QSplitter()
+        self.splitter.addWidget(self.config_scroll)
+        self.splitter.addWidget(self.networks_scroll)
+        # self.splitter.setOrientation(QtCore.Qt.Vertical)
+        self.layout().insertWidget(1, self.splitter)
+
         # Config Button Menu
         menu = QtWidgets.QMenu(self)
         action = menu.addAction('New...')
@@ -101,22 +113,18 @@ class ImporterDialog(QtWidgets.QDialog):
         menu_bar.addMenu(menu)
         self.layout().setMenuBar(menu_bar)
 
-        self.subfolders_chk.setVisible(False)
-
-        conflict_options = {
-            'remove': 'Remove Existing Nodes',
-            'replace': 'Replace Existing Nodes with Connections',
-            'rename': 'Rename Nodes',
-        }
-        for name, label in conflict_options.items():
-            self.conflict_cmb.addItem(label, name)
-
         self.main_prgbar.setVisible(False)
         size_policy = self.main_prgbar.sizePolicy()
-        size_policy.setRetainSizeWhenHidden(True)
+        # size_policy.setRetainSizeWhenHidden(True)
         self.main_prgbar.setSizePolicy(size_policy)
 
         self.status_bar = QtWidgets.QStatusBar()
+        palette = self.status_bar.palette()
+        palette.setColor(palette.Window, palette.color(palette.AlternateBase))
+        palette.setColor(palette.WindowText, palette.color(palette.HighlightedText))
+        self.status_bar.setPalette(palette)
+        self.status_bar.setAutoFillBackground(True)
+
         self.status_bar.setSizeGripEnabled(False)
         self.footer_lay.insertWidget(0, self.status_bar)
         self.footer_lay.setStretch(0, 1)
@@ -126,7 +134,9 @@ class ImporterDialog(QtWidgets.QDialog):
         self.path_browse_btn.clicked.connect(self.browse_path)
         self.config_cmb.currentTextChanged.connect(self.config_changed)
 
-        self.search_btn.clicked.connect(self.accept)
+        self.networks_wdg.refresh_btn.clicked.connect(self.refresh)
+
+        self.create_btn.clicked.connect(self.accept)
         self.cancel_btn.clicked.connect(self.reject)
 
     def config_changed(self, text=None):
@@ -241,13 +251,20 @@ class ImporterDialog(QtWidgets.QDialog):
             self.path_cmb.insertItem(0, path)
             self.path_cmb.setCurrentIndex(0)
 
-    def accept(self):
+    def refresh(self):
         self.save_config()
         self.save_settings()
 
+        self.networks_wdg.networks_tree.clear()
+
         path = self.path_cmb.currentText()
         config = self.config_cmb.currentData()
-        include_subfolders = self.subfolders_chk.isChecked()
+        # include_subfolders = self.subfolders_chk.isChecked()
+        include_subfolders = False
+
+        if not config.renderer:
+            self.status_bar.showMessage('Failed to read config', 1000)
+            return
 
         plugin = '{}_{}'.format(self.dcc, config.renderer)
         self.importer = importer.Importer.from_plugin(plugin)
@@ -279,11 +296,19 @@ class ImporterDialog(QtWidgets.QDialog):
                 QtWidgets.QMessageBox.Ok)
             return
 
-        networks = networks_dialog.NetworksDialog.selected_networks(networks)
+        self.networks_wdg.networks_tree.clear()
+        self.networks_wdg.networks_tree.add_networks(networks)
+
+    def accept(self):
+        networks = self.networks_wdg.selected_networks()
+
+        if not networks:
+            self.status_bar.showMessage('No networks selected', 1000)
+            return
 
         kwargs = {
-            'on_conflict': self.conflict_cmb.currentData(),
-            'assign_material': self.assign_chk.isChecked()
+            'on_conflict': self.networks_wdg.conflict_cmb.currentData(),
+            'assign_material': self.networks_wdg.assign_chk.isChecked()
         }
 
         for network in networks:
@@ -304,11 +329,11 @@ class ImporterDialog(QtWidgets.QDialog):
         logging.debug('save_settings')
         self.settings.setValue('importer_dialog/pos', self.pos())
         self.settings.setValue('importer_dialog/size', self.size())
+        self.settings.setValue('importer_dialog/splitter', self.splitter.sizes())
         self.settings.setValue('importer/current_config', self.config_cmb.currentText())
         self.settings.setValue('importer/current_path', self.path_cmb.currentText())
-        self.settings.setValue('importer/include_subfolders', self.subfolders_chk.isChecked())
-        self.settings.setValue('importer/on_conflict', self.conflict_cmb.currentData())
-        self.settings.setValue('importer/assign_materials', self.assign_chk.isChecked())
+        self.settings.setValue('importer/on_conflict', self.networks_wdg.conflict_cmb.currentData())
+        self.settings.setValue('importer/assign_materials', self.networks_wdg.assign_chk.isChecked())
 
     def load_settings(self):
         logging.debug('load_settings')
@@ -316,6 +341,8 @@ class ImporterDialog(QtWidgets.QDialog):
             self.move(self.settings.value('importer_dialog/pos'))
         if self.settings.value('importer_dialog/size'):
             self.resize(self.settings.value('importer_dialog/size'))
+        if self.settings.list('importer_dialog/splitter'):
+            self.splitter.setSizes(self.settings.list('importer_dialog/splitter'))
 
         max_num_paths = int(self.settings.value('user/num_recent_paths', 10))
         for path in self.settings.list('importer/recent_paths')[:max_num_paths - 1]:
@@ -330,14 +357,12 @@ class ImporterDialog(QtWidgets.QDialog):
         index = self.path_cmb.findText(self.settings.value('importer/current_path', ''))
         self.path_cmb.setCurrentIndex(max(0, index))
 
-        self.subfolders_chk.setChecked(self.settings.bool('importer/include_subfolders'))
-
         on_conflict = self.settings.value('importer/on_conflict', 'rename')
-        current_index = self.conflict_cmb.findData(on_conflict)
+        current_index = self.networks_wdg.conflict_cmb.findData(on_conflict)
         current_index = max(0, current_index)
-        self.conflict_cmb.setCurrentIndex(current_index)
+        self.networks_wdg.conflict_cmb.setCurrentIndex(current_index)
 
-        self.assign_chk.setChecked(self.settings.bool('importer/assign_materials'))
+        self.networks_wdg.assign_chk.setChecked(self.settings.bool('importer/assign_materials'))
 
     def edit_settings(self):
         os.startfile(self.settings.fileName())
@@ -622,7 +647,7 @@ class ListAddButton(QtWidgets.QPushButton):
         self.setMinimumHeight(40)
 
         effect = QtWidgets.QGraphicsOpacityEffect(self)
-        effect.setOpacity(0.4)
+        effect.setOpacity(0.6)
         self.setGraphicsEffect(effect)
 
 

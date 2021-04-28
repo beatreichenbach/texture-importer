@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>main</class>
+ <widget class="QWidget" name="main">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>798</width>
+    <height>568</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Material Networks</string>
+  </property>
+  <layout class="QVBoxLayout" name="main_lay" stretch="0,0,1,0,0">
+   <item>
+    <widget class="QPushButton" name="refresh_btn">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Search Path</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="actions_lay">
+     <item>
+      <widget class="QPushButton" name="check_all_btn">
+       <property name="text">
+        <string>Check All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="check_none_btn">
+       <property name="text">
+        <string>Uncheck All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="check_selected_btn">
+       <property name="text">
+        <string>Check Selected</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QWidget" name="networks_tree" native="true"/>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="conflict_lay">
+     <item>
+      <widget class="QLabel" name="conflict_lbl">
+       <property name="text">
+        <string>On Conflict:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="conflict_cmb"/>
+     </item>
+     <item>
+      <spacer name="spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="assign_chk">
+     <property name="text">
+      <string>Assign Materials to Selection</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

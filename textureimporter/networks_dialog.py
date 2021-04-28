@@ -6,9 +6,9 @@ import gui_utils
 import utils
 
 
-class NetworksDialog(QtWidgets.QDialog):
+class NetworksWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(NetworksDialog, self).__init__(parent)
+        super(NetworksWidget, self).__init__(parent)
 
         self.networks = []
         self.settings = utils.Settings()
@@ -16,42 +16,54 @@ class NetworksDialog(QtWidgets.QDialog):
         self.init_ui()
 
     def init_ui(self):
-        gui_utils.load_ui(self, 'networks_dialog.ui')
+        gui_utils.load_ui(self, 'networks_widget.ui')
 
         self.resize(800, 600)
 
         placeholder = self.networks_tree
         self.networks_tree = NetworksTreeWidget(self.networks_tree)
-        self.networks_tree.setHeaderLabels(('Material', 'Node Name', 'Exists', 'File Name'))
+        self.networks_tree.setHeaderLabels(('Material', 'Node Name', 'Status', 'File Name'))
         self.networks_tree.setSortingEnabled(True)
+        self.networks_tree.sortByColumn(0, QtCore.Qt.AscendingOrder)
         self.networks_tree.setSelectionMode(self.networks_tree.ExtendedSelection)
         self.networks_tree.setAlternatingRowColors(True)
         self.layout().insertWidget(self.layout().indexOf(placeholder), self.networks_tree)
-
         self.layout().removeWidget(placeholder)
         placeholder.setParent(None)
         placeholder.deleteLater()
+
+        conflict_options = {
+            'remove': 'Remove Existing Nodes',
+            'replace': 'Replace Existing Nodes with Connections',
+            'rename': 'Rename Nodes',
+        }
+        for name, label in conflict_options.items():
+            self.conflict_cmb.addItem(label, name)
 
         self.check_all_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Checked))
         self.check_none_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Unchecked))
         self.check_selected_btn.clicked.connect(lambda: self.networks_tree.check_selected_items(QtCore.Qt.Checked))
 
-        self.create_btn.clicked.connect(self.accept)
-        self.cancel_btn.clicked.connect(self.reject)
-
         self.load_settings()
 
     def save_settings(self):
-        self.settings.setValue('networks_dialog/pos', self.pos())
-        self.settings.setValue('networks_dialog/size', self.size())
+        pass
 
     def load_settings(self):
-        if self.settings.value('assign_materials/pos'):
-            self.move(self.settings.value('networks_dialog/pos'))
-        if self.settings.value('networks_dialog/size'):
-            self.resize(self.settings.value('networks_dialog/size'))
+        pass
 
     def accept(self):
+        self.save_settings()
+        super(NetworksWidget, self).accept()
+
+    def reject(self):
+        self.save_settings()
+        super(NetworksWidget, self).reject()
+
+    def closeEvent(self, event):
+        self.save_settings()
+
+    def selected_networks(self):
         self.save_settings()
 
         self.networks = []
@@ -69,25 +81,7 @@ class NetworksDialog(QtWidgets.QDialog):
                     network.channels.append(channel)
 
             self.networks.append(network)
-        super(NetworksDialog, self).accept()
-
-    def reject(self):
-        self.save_settings()
-        super(NetworksDialog, self).reject()
-
-    def closeEvent(self, event):
-        self.save_settings()
-
-    @classmethod
-    def selected_networks(cls, networks):
-        logging.debug('selected_networks')
-        dialog = cls()
-        dialog.networks_tree.add_networks(networks)
-        dialog.setModal(True)
-        if dialog.exec_():
-            return dialog.networks
-        else:
-            return []
+        return self.networks
 
 
 class SortTreeWidgetItem(QtWidgets.QTreeWidgetItem):
@@ -149,31 +143,36 @@ class NetworksTreeWidget(QtWidgets.QTreeWidget):
         item = SortTreeWidgetItem([network.material_name, network.material_node_name])
         item.setFlags(item.flags() | QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable)
         item.setData(0, QtCore.Qt.UserRole, network)
+        item.setSortData(0, network.material_name)
 
         if network.exists:
-            icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
+            icon = self.style().standardIcon(QtWidgets.QStyle.SP_MessageBoxWarning)
+            item.setText(2, 'Node exists')
             item.setCheckState(0, QtCore.Qt.Unchecked)
         else:
-            icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+            icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
             item.setCheckState(0, QtCore.Qt.Checked)
         item.setSortData(2, network.exists)
         item.setIcon(2, icon)
 
         children = []
-        for channel in network.channels:
+        for i, channel in enumerate(network.channels):
             file_name = os.path.basename(channel.file_path)
             child = SortTreeWidgetItem([channel.attribute_name, channel.file_node_name, None, file_name])
             child.setFlags(child.flags() | QtCore.Qt.ItemIsUserCheckable)
             child.setData(0, QtCore.Qt.UserRole, channel)
+            child.setSortData(0, i)
+            child.setCheckState(0, item.checkState(0))
 
-            if channel.exists:
-                icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
-                child.setCheckState(0, QtCore.Qt.Unchecked)
-                child.setToolTip(2, 'This node already exists in the scene.')
-            else:
+            if not channel.file_path:
                 icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
-                child.setCheckState(0, QtCore.Qt.Checked)
-                child.setToolTip(2, 'This node doesn\'t exist in the scene.')
+                child.setText(2, 'Not Found')
+            elif channel.exists:
+                icon = self.style().standardIcon(QtWidgets.QStyle.SP_MessageBoxWarning)
+                child.setText(2, 'Node exists')
+            else:
+                icon = self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton)
+
             child.setSortData(2, channel.exists)
             child.setIcon(2, icon)
 
@@ -205,10 +204,10 @@ if __name__ == '__main__':
 
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    dialog = NetworksDialog()
+    dialog = NetworksWidget()
     dialog.networks_tree.add_network(network)
     dialog.networks_tree.add_network(network)
     dialog.show()
     sys.exit(app.exec_())
 
-    # show(NetworksDialog)
+    # show(NetworksWidget)

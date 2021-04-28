@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>817</width>
-    <height>607</height>
+    <width>838</width>
+    <height>592</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -85,8 +85,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>797</width>
-        <height>422</height>
+        <width>818</width>
+        <height>229</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="config_lay"/>
@@ -94,34 +94,24 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="subfolders_chk">
-     <property name="toolTip">
-      <string>This feature is currently not supported.</string>
+    <widget class="QScrollArea" name="networks_scroll">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
      </property>
-     <property name="text">
-      <string>Include Sub Folders</string>
+     <property name="widgetResizable">
+      <bool>true</bool>
      </property>
-    </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="conflict_lay" stretch="0,1">
-     <item>
-      <widget class="QLabel" name="conflict_lbl">
-       <property name="text">
-        <string>On Conflict:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="conflict_cmb"/>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="assign_chk">
-     <property name="text">
-      <string>Assign Materials to Selection</string>
-     </property>
+     <widget class="QWidget" name="networks_widget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>818</width>
+        <height>244</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="networks_lay"/>
+     </widget>
     </widget>
    </item>
    <item>
@@ -137,9 +127,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="search_btn">
+      <widget class="QPushButton" name="create_btn">
        <property name="text">
-        <string>Search...</string>
+        <string>Create</string>
        </property>
       </widget>
      </item>

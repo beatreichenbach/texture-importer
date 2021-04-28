@@ -71,9 +71,12 @@ class Settings(QtCore.QSettings):
         try:
             if isinstance(value, basestring):
                 value = [value, ]
+            value = [int(i) if isinstance(i, basestring) and i.isdigit() else i for i in value]
         except NameError:
             if isinstance(value, str):
                 value = [value, ]
+            value = [int(i) if isinstance(i, str) and i.isdigit() else i for i in value]
+
         return value
 
     def clear(self):

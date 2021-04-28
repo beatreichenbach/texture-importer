@@ -18,14 +18,16 @@ main_window = run()
 ## Getting Started
 1. Select a path with texture files.
 2. Select a [Config](#configs).
-3. Set any [Options](#options).
-4. Search for textures.
-5. The next window will display all the material networks that can be created with the textures found. The Node Name column shows a preview of the newly created nodes and whether they already exist in the scene. Check the networks to be created and click Create.
+3. Search the path for textures.
+4. Check any nodes to be created.
+5. Set any [Options](#options).
+6. Create the material networks.
 
 ![Textureimporter Dialog](images/textureimporter_dialog.jpg)
 
 ## Configs
-Configs are presets that store different patterns for texture names. Configs can be organized in the menu next to the Save button and are available as .json files in the File menu. When importing textures from Substance Painter for example, just copy the same preset that is used there. Each config has a renderer associated with it and a set of channels that correspond to attributes on a material.
+Configs are presets that store different patterns for texture names. Configs can be organized in the menu next to the Save button and are available as .json files in the File menu. When importing textures from Substance Painter for example, just copy the same preset that is used there. Each config has a renderer associated with it and a set of channels that correspond to attributes on a material.\
+After editing configs the network view can be maximized by moving the handle in the middle to the left.
 
 ### Wildcards
 The pattern is used to search for file names in the specified path. Wildcards can be inserted with the right click menu.\
@@ -52,10 +54,10 @@ Examples:
 - Replace Existing Nodes with Connections: If a node already exists with the given name, attempt to remove the existing node but keep all connections.
 
 ### Assign Material to Selection
-If this option is checked, the tool will attempt a few material assignments:
+If this option is checked, the tool will attempt a material assignments in the following order:
 1. If a material already exists with the name, transfer any material assignments to the new node.
 2. If `$mesh` is used in the config, it will attempt to assign each material to the corresponding mesh.
-3. The created material will be assign to the selection.
+3. The created material will be assigned to the selection.
 
 ## Settings
 The important settings for the user are listed under `[general]` or the current dcc header such as `[maya]`.\
