@@ -151,7 +151,12 @@ class Importer(object):
         self.settings.beginGroup(self.settings_group)
         pattern_string = self.settings.value('material_node_pattern')
         self.settings.endGroup()
-        search_pattern = re.sub(r'{}', r'([\w\-. ]+)', pattern_string)
+        # py3.6 and before
+        try:
+            search_pattern = re.sub(r'{}', r'([\\w\-. ]+)', pattern_string)
+        except KeyError:
+            search_pattern = re.sub(r'{}', r'([\w\-. ]+)', pattern_string)
+
         match = re.search(search_pattern, material_name)
         if match:
             material_node_name = material_name
@@ -177,10 +182,12 @@ class Importer(object):
                         file_path = os.path.join(os.path.dirname(file_path), file_name)
                     break
             else:
-                continue
+                file_path = ''
 
             material_atttribute = '{}_{}'.format(material_name, channel.attribute)
             file_node_name = self.resolve_name('file_node_pattern', material_atttribute)
+            if not file_path:
+                file_node_name = ''
 
             network_channel = NetworkChannel(network)
             network_channel.file_node_name = file_node_name
@@ -189,7 +196,7 @@ class Importer(object):
             network_channel.file_path = file_path
             network_channel.exists = self.exists(file_node_name)
 
-        if not network.channels:
+        if not any([channel.file_path for channel in network.channels]):
             return
 
         return network
@@ -329,4 +336,4 @@ class Mesh(object):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    importer = Importer.from_plugin('maya', 'arnold')
+    importer = Importer.from_plugin('maya-arnold')

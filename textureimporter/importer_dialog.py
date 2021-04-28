@@ -115,10 +115,16 @@ class ImporterDialog(QtWidgets.QDialog):
 
         self.main_prgbar.setVisible(False)
         size_policy = self.main_prgbar.sizePolicy()
-        size_policy.setRetainSizeWhenHidden(True)
+        # size_policy.setRetainSizeWhenHidden(True)
         self.main_prgbar.setSizePolicy(size_policy)
 
         self.status_bar = QtWidgets.QStatusBar()
+        palette = self.status_bar.palette()
+        palette.setColor(palette.Window, palette.color(palette.AlternateBase))
+        palette.setColor(palette.WindowText, palette.color(palette.HighlightedText))
+        self.status_bar.setPalette(palette)
+        self.status_bar.setAutoFillBackground(True)
+
         self.status_bar.setSizeGripEnabled(False)
         self.footer_lay.insertWidget(0, self.status_bar)
         self.footer_lay.setStretch(0, 1)
@@ -140,7 +146,6 @@ class ImporterDialog(QtWidgets.QDialog):
         if not text:
             return
         self.load_config(text)
-        self.accept()
 
     def new_config(self):
         name, result = QtWidgets.QInputDialog.getText(self, 'New Config', 'Config:', text='New Config')
@@ -247,7 +252,7 @@ class ImporterDialog(QtWidgets.QDialog):
             self.path_cmb.setCurrentIndex(0)
 
     def refresh(self):
-        # self.save_config()
+        self.save_config()
         self.save_settings()
 
         self.networks_wdg.networks_tree.clear()
@@ -256,6 +261,10 @@ class ImporterDialog(QtWidgets.QDialog):
         config = self.config_cmb.currentData()
         # include_subfolders = self.subfolders_chk.isChecked()
         include_subfolders = False
+
+        if not config.renderer:
+            self.status_bar.showMessage('Failed to read config', 1000)
+            return
 
         plugin = '{}_{}'.format(self.dcc, config.renderer)
         self.importer = importer.Importer.from_plugin(plugin)
@@ -293,6 +302,10 @@ class ImporterDialog(QtWidgets.QDialog):
     def accept(self):
         networks = self.networks_wdg.selected_networks()
 
+        if not networks:
+            self.status_bar.showMessage('No networks selected', 1000)
+            return
+
         kwargs = {
             'on_conflict': self.networks_wdg.conflict_cmb.currentData(),
             'assign_material': self.networks_wdg.assign_chk.isChecked()
@@ -316,10 +329,11 @@ class ImporterDialog(QtWidgets.QDialog):
         logging.debug('save_settings')
         self.settings.setValue('importer_dialog/pos', self.pos())
         self.settings.setValue('importer_dialog/size', self.size())
+        self.settings.setValue('importer_dialog/splitter', self.splitter.sizes())
         self.settings.setValue('importer/current_config', self.config_cmb.currentText())
         self.settings.setValue('importer/current_path', self.path_cmb.currentText())
-        # self.settings.setValue('importer/on_conflict', self.conflict_cmb.currentData())
-        # self.settings.setValue('importer/assign_materials', self.assign_chk.isChecked())
+        self.settings.setValue('importer/on_conflict', self.networks_wdg.conflict_cmb.currentData())
+        self.settings.setValue('importer/assign_materials', self.networks_wdg.assign_chk.isChecked())
 
     def load_settings(self):
         logging.debug('load_settings')
@@ -327,6 +341,8 @@ class ImporterDialog(QtWidgets.QDialog):
             self.move(self.settings.value('importer_dialog/pos'))
         if self.settings.value('importer_dialog/size'):
             self.resize(self.settings.value('importer_dialog/size'))
+        if self.settings.list('importer_dialog/splitter'):
+            self.splitter.setSizes(self.settings.list('importer_dialog/splitter'))
 
         max_num_paths = int(self.settings.value('user/num_recent_paths', 10))
         for path in self.settings.list('importer/recent_paths')[:max_num_paths - 1]:
@@ -341,12 +357,12 @@ class ImporterDialog(QtWidgets.QDialog):
         index = self.path_cmb.findText(self.settings.value('importer/current_path', ''))
         self.path_cmb.setCurrentIndex(max(0, index))
 
-        # on_conflict = self.settings.value('importer/on_conflict', 'rename')
-        # current_index = self.conflict_cmb.findData(on_conflict)
-        # current_index = max(0, current_index)
-        # self.conflict_cmb.setCurrentIndex(current_index)
+        on_conflict = self.settings.value('importer/on_conflict', 'rename')
+        current_index = self.networks_wdg.conflict_cmb.findData(on_conflict)
+        current_index = max(0, current_index)
+        self.networks_wdg.conflict_cmb.setCurrentIndex(current_index)
 
-        # self.assign_chk.setChecked(self.settings.bool('importer/assign_materials'))
+        self.networks_wdg.assign_chk.setChecked(self.settings.bool('importer/assign_materials'))
 
     def edit_settings(self):
         os.startfile(self.settings.fileName())
