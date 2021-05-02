@@ -79,7 +79,7 @@
    <item>
     <widget class="QCheckBox" name="assign_chk">
      <property name="text">
-      <string>Assign Materials to Selection</string>
+      <string>Assign Materials</string>
      </property>
     </widget>
    </item>
