@@ -1,0 +1,36 @@
+{
+    "channels": [
+        {
+            "attribute": "color", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_Diffuse(.$udim).*"
+        }, 
+        {
+            "attribute": "reflectionColor", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Specular(.$udim).*"
+        }, 
+        {
+            "attribute": "reflectionGlossiness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Glossiness(.$udim).*"
+        }, 
+        {
+            "attribute": "normalMap", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Normal(.$udim).*"
+        }, 
+        {
+            "attribute": "illumColor", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_Emissive(.$udim).*"
+        }, 
+        {
+            "attribute": "displacement", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Height(.$udim).*"
+        }
+    ], 
+    "name": "VRay (Specular Glossiness)", 
+    "renderer": "vray"
+}

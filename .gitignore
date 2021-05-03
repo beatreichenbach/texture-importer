@@ -147,3 +147,5 @@ textureimporter/settings.ini
 textureimporter/configs/*.json
 !textureimporter/configs/Arnold.json
 !textureimporter/configs/PBR Metallic Roughness.json
+!textureimporter/configs/VRay (Specular Glossiness).json
+!textureimporter/configs/VRay (Metalness Roughness).json

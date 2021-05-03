@@ -186,10 +186,17 @@ class ImporterDialog(QtWidgets.QDialog):
             self.save_config(name)
 
     def rename_config(self):
+        current_config = self.config_cmb.currentText()
         name, result = QtWidgets.QInputDialog.getText(
-            self, 'Rename Config', 'Config:', text=self.config_cmb.currentText())
+            self, 'Rename Config', 'Config:', text=current_config)
         if result:
             del self._configs[self.config_cmb.currentText()]
+            config_files = glob.glob(os.path.join(self.settings.configs_path, '{}.json'.format(current_config)))
+            for config_file in config_files:
+                try:
+                    os.remove(config_file)
+                except OSError:
+                    logging.error('Failed to delete: {}'.format(config_file))
             self.save_config(name)
 
     def delete_config(self):
@@ -691,6 +698,7 @@ class ChannelWidget(QtWidgets.QWidget):
 
     @attributes.setter
     def attributes(self, attributes):
+        attributes.sort()
         self.attribute_cmb.blockSignals(True)
         self.attribute_cmb.clear()
         self.attribute_cmb.addItems(attributes)

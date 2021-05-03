@@ -124,7 +124,11 @@ class Importer(maya.Importer):
         # extra attributes:
         attrs.extend([
             'normalMap',
-            'displacement'
+            'displacement',
+            'fresnelIOR',
+            'refractionIOR',
+            'reflectionRoughness',
+            'illumColor'
             ])
 
         return attrs
@@ -166,6 +170,13 @@ class Importer(maya.Importer):
                 in_connection = '{}.displacementShader'.format(shadingengine_node)
                 cmds.connectAttr(out_connection, in_connection, force=True)
         else:
+            if material_attribute == 'reflectionRoughness':
+                material_attribute = 'reflectionGlossiness'
+                cmds.setAttr('{}.useRoughness'.format(material_node), True)
+
+            if material_attribute == 'reflectionGlossiness':
+                cmds.setAttr('{}.lockFresnelIORToRefractionIOR'.format(material_node), False)
+
             if cmds.getAttr('{}.{}'.format(material_node, material_attribute), type=True) == 'float':
                 cmds.setAttr('{}.alphaIsLuminance'.format(file_node), True)
                 file_attribute = 'outAlpha'

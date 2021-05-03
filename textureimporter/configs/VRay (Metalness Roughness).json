@@ -1,0 +1,36 @@
+{
+    "channels": [
+        {
+            "attribute": "color", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_BaseColor(.$udim).*"
+        }, 
+        {
+            "attribute": "metalness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Metallic(.$udim).*"
+        }, 
+        {
+            "attribute": "reflectionRoughness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Roughness(.$udim).*"
+        }, 
+        {
+            "attribute": "normalMap", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Normal(.$udim).*"
+        }, 
+        {
+            "attribute": "illumColor", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_Emissive(.$udim).*"
+        }, 
+        {
+            "attribute": "displacement", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Height(.$udim).*"
+        }
+    ], 
+    "name": "VRay (Metalness Roughness)", 
+    "renderer": "vray"
+}
