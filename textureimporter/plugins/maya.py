@@ -92,6 +92,9 @@ class Importer(importer.Importer):
         place_node = self.create_place(place_name)
 
         for channel in network.channels:
+            if not channel.file_node_name:
+                continue
+
             file_node = self.create_file(channel.file_node_name, channel.file_path, channel.colorspace)
             self.connect_place(place_node, file_node)
 
