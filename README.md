@@ -9,7 +9,7 @@ Using customizable presets the tool searches a path for texture files and create
 3. Drag the setup_maya.mel file into the viewport of maya.
 4. This creates a button on the shelf that can be used to launch the tool.
 
-If preferred the package can be installed manually by moving it the textureimporter directory into a location where it can be loaded as a python package by maya. The tool can then be ran with the following code:
+If preferred the package can be installed manually by moving the textureimporter directory into a location where it can be loaded as a python package by maya. The tool can then be ran with the following code:
 ```
 from textureimporter.plugins.maya import run
 main_window = run()
@@ -26,7 +26,10 @@ main_window = run()
 ![Textureimporter Dialog](images/textureimporter_dialog.jpg)
 
 ## Configs
-Configs are presets that store different patterns for texture names. Configs can be organized in the menu next to the Save button and are available as .json files in the File menu. When importing textures from Substance Painter for example, just copy the same preset that is used there. Each config has a renderer associated with it and a set of channels that correspond to attributes on a material.\
+Configs are presets that store different patterns for texture names. Configs can be organized in the menu next to the Save button and are available as .json files in the File menu. When importing textures from Substance Painter for example, just copy the same preset that is used there. Each config has a renderer associated with it and a set of channels that correspond to attributes on a material.
+
+To add new configs, rename, or duplicate configs use the extra functions next to the save button to the right of the config selector.
+
 After editing configs the network view can be maximized by moving the handle in the middle to the left.
 
 ### Wildcards
