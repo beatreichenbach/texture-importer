@@ -9,7 +9,7 @@ Using customizable presets the tool searches a path for texture files and create
 3. Drag the setup_maya.mel file into the viewport of maya.
 4. This creates a button on the shelf that can be used to launch the tool.
 
-If preferred the package can be installed manually by moving it into a location where the textureimporter directory can be loaded as a python package by maya. The tool can then be ran with the following code:
+If preferred the package can be installed manually by moving it the textureimporter directory into a location where it can be loaded as a python package by maya. The tool can then be ran with the following code:
 ```
 from textureimporter.plugins.maya import run
 main_window = run()
@@ -53,8 +53,8 @@ Examples:
 - Remove Existing Nodes: If a node already exists with the given name, remove the existing nodes.
 - Replace Existing Nodes with Connections: If a node already exists with the given name, attempt to remove the existing node but keep all connections.
 
-### Assign Material to Selection
-If this option is checked, the tool will attempt a material assignments in the following order:
+### Assign Materials
+If this option is checked, the tool will attempt material assignments in the following order:
 1. If a material already exists with the name, transfer any material assignments to the new node.
 2. If `$mesh` is used in the config, it will attempt to assign each material to the corresponding mesh.
 3. The created material will be assigned to the selection.
