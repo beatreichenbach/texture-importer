@@ -173,6 +173,7 @@ class Importer(maya.Importer):
             if material_attribute == 'reflectionRoughness':
                 material_attribute = 'reflectionGlossiness'
                 cmds.setAttr('{}.useRoughness'.format(material_node), True)
+                cmds.setAttr('{}.reflectionColor'.format(file_node), 1, 1, 1)
 
             if material_attribute == 'reflectionGlossiness':
                 cmds.setAttr('{}.lockFresnelIORToRefractionIOR'.format(material_node), False)
