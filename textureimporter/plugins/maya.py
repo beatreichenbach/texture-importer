@@ -18,6 +18,8 @@ def run():
 
 
 class Importer(importer.Importer):
+    display_name = ''
+    plugin_name = ''
     settings_group = 'maya'
     settings_defaults = {
         'material_node_pattern': '{}_mat',
@@ -58,6 +60,8 @@ class Importer(importer.Importer):
         return colorspaces
 
     def load_plugin(self):
+        if not self.plugin_name:
+            raise RuntimeError
         if not (cmds.pluginInfo(self.plugin_name, query=True, loaded=True)):
             cmds.loadPlugin(self.plugin_name)
 
