@@ -77,7 +77,8 @@ class NetworksWidget(QtWidgets.QWidget):
             for j in range(item.childCount()):
                 child = item.child(j)
                 channel = child.data(0, QtCore.Qt.UserRole)
-                if child.checkState(0):
+                # ignore checked items without file path
+                if child.checkState(0) and channel.file_path:
                     network.channels.append(channel)
 
             self.networks.append(network)

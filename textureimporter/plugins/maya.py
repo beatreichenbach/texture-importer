@@ -86,8 +86,7 @@ class Importer(importer.Importer):
                 network.material_node_name, destination=True, source=False, type='shadingEngine')
             if outputs:
                 shadingengine_node = outputs[0]
-                set_members = cmds.listConnections(
-                    '{}.dagSetMembers'.format(shadingengine_node), destination=False, source=True)
+                set_members = cmds.sets(shadingengine_node, query=True)
 
         shadingengine_node_name = self.resolve_name('shadingengine_node_pattern', network.material_name)
         material_node, shadingengine_node = self.create_material(network.material_node_name, shadingengine_node_name)
