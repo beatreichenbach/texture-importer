@@ -209,6 +209,10 @@ class Importer(importer.Importer):
                 if on_conflict == 'remove':
                     return node
 
+                if not out_connections:
+                    # ignore when old_node was not allowed to have connections
+                    return node
+
                 for i in range(0, len(out_connections), 2):
                     source = out_connections[i]
                     destination = out_connections[i + 1]
