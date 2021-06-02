@@ -118,6 +118,9 @@ class Importer(maya.Importer):
             # some users like to use the maya node instead of the render specific node
             if self.settings.value('maya/use_bump2d', False):
                 normal_node = self.create_node('bump2d', name=normal_node_name, asUtility=True)
+                cmds.setAttr('{}.bumpInterp'.format(normal_node), 1)
+                cmds.setAttr('{}.aiFlipR'.format(normal_node), 0)
+                cmds.setAttr('{}.aiFlipG'.format(normal_node), 0)
 
                 out_connection = '{}.outAlpha'.format(file_node)
                 in_connection = '{}.bumpValue'.format(normal_node)
@@ -139,6 +142,7 @@ class Importer(maya.Importer):
 
         elif material_attribute == 'bump':
             bump_node = self.create_node('bump2d', asUtility=True)
+            material_attribute = 'normalCamera'
 
             out_connection = '{}.outAlpha'.format(file_node)
             in_connection = '{}.bumpValue'.format(bump_node)
