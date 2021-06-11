@@ -22,10 +22,13 @@ def to_dict(obj):
 
 
 def unload_modules():
-    for module in sys.modules.values():
+    for module in list(sys.modules.values()):
         if module and module.__name__.startswith(__package__):
             logging.debug('Unloading module: {}'.format(module.__name__))
-            del sys.modules[module.__name__]
+            try:
+                del sys.modules[module.__name__]
+            except KeyError:
+                pass
 
 
 class Settings(QtCore.QSettings):

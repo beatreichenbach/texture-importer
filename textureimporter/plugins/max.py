@@ -12,9 +12,15 @@ rt = pymxs.runtime
 
 
 def run():
-    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-    main_window = next(w for w in app.topLevelWidgets() if w.objectName() == 'MayaWindow')
-    dialog = importer_dialog.ImporterDialog(main_window, dcc='maya')
+    top_level_windows = QtWidgets.QApplication.topLevelWidgets()
+
+    no_parent_windows = list()
+    for widget in top_level_windows:
+        if (isinstance(widget, QtWidgets.QWidget) and widget.parentWidget() is None):
+            no_parent_windows.append(widget)
+    main_window = no_parent_windows[0]
+    # main_window = rt.GetQMaxWindow()
+    dialog = importer_dialog.ImporterDialog(main_window, dcc='max')
     dialog.show()
     return main_window
 
@@ -37,11 +43,11 @@ class Importer(importer.Importer):
     @property
     def attributes(self):
         '''
-        material_node = cmds.shadingNode('lambert', asShader=True)
-        attrs = cmds.listAttr(material_node, write=True, connectable=True)
-        attrs = [attr for attr in attrs if attr[-1] not in ['R', 'G', 'B', 'X', 'Y', 'Z']]
-        print(attrs)
-        cmds.delete(material_node)
+        import pymxs
+        rt = pymxs.runtime
+        mat = rt.PhysicalMaterial()
+        for prop in rt.getPropNames(mat):
+            print(prop)
         '''
 
         return []
@@ -49,60 +55,47 @@ class Importer(importer.Importer):
     @property
     def colorspaces(self):
         colorspaces = [
-            'Raw',
+            'auto',
+            'linear',
             'sRGB',
-            'Utility - Raw',
-            'Utility - sRGB - Texture',
-            'Utility - Linear - sRGB ',
-            'Output - sRGB ',
-            'ACES - ACEScg ',
+            'Rec709',
         ]
 
         return colorspaces
 
     def load_plugin(self):
         for renderer in rt.rendererClass.classes:
-            if 'V_RAY' in renderer:
+            if str(renderer) == self.plugin_name:
                 return
         else:
             raise RuntimeError
 
     def get_meshes(self):
-        meshes = cmds.ls(selection=True, long=True)
-        meshes = [Mesh(mesh) for mesh in meshes]
+        meshes = [Mesh(mesh) for mesh in rt.selection]
         return meshes
 
     def exists(self, node_name):
-        return cmds.objExists(node_name)
+        return node_name in rt.scenematerials
 
     def create_network(self, network, **kwargs):
         self.current_network = network
         self.current_kwargs = kwargs
-        selection = cmds.ls(selection=True)
+        selection = rt.selection
 
         set_members = []
         if kwargs.get('assign_material') and self.exists(network.material_node_name):
             # store material assignments
+            material = rt.getnodebyname(network.material_node_name)
+            material_dependents = rt.refs.dependents(material)
+            set_members = [i for i in material_dependents if rt.superClassOf(i) == rt.GeometryClass]
 
-            outputs = cmds.listConnections(
-                network.material_node_name, destination=True, source=False, type='shadingEngine')
-            if outputs:
-                shadingengine_node = outputs[0]
-                set_members = cmds.listConnections(
-                    '{}.dagSetMembers'.format(shadingengine_node), destination=False, source=True)
-
-        shadingengine_node_name = self.resolve_name('shadingengine_node_pattern', network.material_name)
-        material_node, shadingengine_node = self.create_material(network.material_node_name, shadingengine_node_name)
-
-        place_name = self.resolve_name('place_node_pattern', network.material_name)
-        place_node = self.create_place(place_name)
+        material_node = self.create_material(network.material_node_name)
 
         for channel in network.channels:
             if not channel.file_node_name:
                 continue
 
             file_node = self.create_file(channel.file_node_name, channel.file_path, channel.colorspace)
-            self.connect_place(place_node, file_node)
 
             attribute_name = channel.attribute_name
             try:
@@ -112,79 +105,71 @@ class Importer(importer.Importer):
                     'Could not connect material attribute: '
                     '{}.{}'.format(material_node, attribute_name))
 
-        cmds.select(selection, replace=True)
+        rt.select(selection)
         if kwargs.get('assign_material'):
             if set_members:
-                for set_member in set_members:
-                    self.assign_material(material_node, set_member)
+                self.assign_material(material_node, set_members)
             elif network.mesh:
                 self.assign_material(material_node, network.mesh)
             else:
                 self.assign_material(material_node, [mesh.mesh for mesh in self.get_meshes()])
 
-        cmds.select(selection, replace=True)
+        rt.meditmaterials[kwargs['index']] = material_node
+
+        rt.select(selection)
         self.current_network = None
         self.current_kwargs = None
 
-    def create_material(self, material_node_name, shadingengine_node_name):
-        material = MaxPlus.Factory.CreateDefaultStdMat()
+    def create_material(self, material_node_name):
+        material = self.create_node('PhysicalMaterial', name=material_node_name)
+
         return material
 
     def create_file(self, name, file_path, colorspace):
-        file_node = MaxPlus.Factory.CreateDefaultBitmapTex()
-        file_node.SetMapName(file_path)
-        file_node.ReloadBitmapAndUpdate()
-
+        file_node = rt.Bitmaptexture(name=name)
+        file_node.filename = file_path
         return file_node
 
-    def create_place(self, name):
-        place_node = self.create_node('place2dTexture', name=name, asUtility=True)
-
-        return place_node
-
-    def connect_place(self, place_node, file_node):
-        pass
-
     def connect_file(self, file_node, material_node, material_attribute):
-        materialSubMaps = MaxPlus.ISubMap._CastFrom(material_node)
-        materialSubMaps.SetSubTexmap(1, file_node)
-        material_node.SetEnableMap(1, True)
+        setattr(material_node, material_attribute, file_node)
 
     def create_node(self, node_type, **kwargs):
-        if node_type == 'shadingEngine':
-            node = cmds.sets(**kwargs)
-        else:
-            node = cmds.shadingNode(node_type, **kwargs)
+        name = kwargs.get('name', '')
+        old_node = rt.getnodebyname(name)
+
+        node_cls = getattr(rt, node_type)
+        node = node_cls(**kwargs)
 
         on_conflict = self.current_kwargs.get('on_conflict')
         if on_conflict in ('replace', 'remove'):
-            name = kwargs.get('name')
-            if node != name:
-                old_node = name
-                out_connections = cmds.listConnections(
-                    old_node, destination=True, source=False, connections=True, plugs=True)
-                cmds.delete(old_node)
-                node = cmds.rename(node, name)
+            if old_node:
+
+                # out_connections = cmds.listConnections(
+                #     old_node, destination=True, source=False, connections=True, plugs=True)
+                # cmds.delete(old_node)
 
                 if on_conflict == 'remove':
                     return node
 
-                for i in range(0, len(out_connections), 2):
-                    source = out_connections[i]
-                    destination = out_connections[i + 1]
+                # for i in range(0, len(out_connections), 2):
+                #     source = out_connections[i]
+                #     destination = out_connections[i + 1]
 
-                    try:
-                        # only connect if the attribute is valid and not already connected
-                        valid_attr = source.split('.')[-1] not in ('message', 'partition')
-                        not_connected = not cmds.isConnected(source, destination)
-                        if valid_attr and not_connected:
-                            cmds.connectAttr(source, destination, force=True)
-                    except (RuntimeError, ValueError):
-                        pass
+                #     try:
+                #         # only connect if the attribute is valid and not already connected
+                #         valid_attr = source.split('.')[-1] not in ('message', 'partition')
+                #         not_connected = not cmds.isConnected(source, destination)
+                #         if valid_attr and not_connected:
+                #             cmds.connectAttr(source, destination, force=True)
+                #     except (RuntimeError, ValueError):
+                #         pass
         return node
 
-    def assign_material(self, material, mesh):
-        mesh.Material = material
+    def assign_material(self, material, meshes):
+        if not isinstance(meshes, list):
+            meshes = [meshes]
+        for mesh in meshes:
+            mesh.mat = material
 
 
 class Mesh(importer.Mesh):
@@ -192,3 +177,42 @@ class Mesh(importer.Mesh):
     def name(self):
         name = self.mesh.Name
         return name
+
+
+class Installer(setup.Installer):
+    def create_macro_script(self, scripts_path):
+        macroscript = (
+            'macroScript TextureImporter '
+            'category:"Plugins" '
+            'tooltip:"Texture Importer" '
+            'buttonText:"TextureImporter" '
+            'Icon:#("UVWUnwrapOption", 6) (\n'
+            '    on execute do (\n'
+            '        python.Execute "import sys"\n'
+            '        python.Execute "sys.path.append(r\'' + scripts_path + '\')"\n'
+            '        python.Execute "from textureimporter.plugins.max import run"\n'
+            '        python.Execute "window = run()"\n'
+            '    )\n'
+            ')')
+        rt.execute(macroscript)
+
+    def install_package(self):
+        scripts_path = rt.getDir(pymxs.runtime.Name('userScripts')) or ''
+        scripts_path = os.path.normpath(scripts_path)
+
+        if not scripts_path:
+            logging.error('Could not find maya scripts directory.')
+            return False
+
+        if not self.copy_package(scripts_path):
+            return False
+
+        try:
+            self.create_macro_script(scripts_path=scripts_path)
+        except RuntimeError as e:
+            logging.error('Could not install MacroScript.')
+            logging.error(e)
+            return False
+
+        logging.info('Installation successfull.')
+        return True

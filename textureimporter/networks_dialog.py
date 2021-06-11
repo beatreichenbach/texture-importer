@@ -2,8 +2,8 @@ import logging
 import os
 
 from PySide2 import QtWidgets, QtCore, QtGui
-import gui_utils
-import utils
+from . import gui_utils
+from . import utils
 
 
 class NetworksWidget(QtWidgets.QWidget):
