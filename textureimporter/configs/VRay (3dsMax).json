@@ -1,0 +1,36 @@
+{
+    "channels": [
+        {
+            "attribute": "diffuse", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_BaseColor(.$udim).*"
+        }, 
+        {
+            "attribute": "metalness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Metallic(.$udim).*"
+        }, 
+        {
+            "attribute": "reflectionRoughness", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Roughness(.$udim).*"
+        }, 
+        {
+            "attribute": "normal", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Normal(.$udim).*"
+        }, 
+        {
+            "attribute": "self_illumination", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_Emissive(.$udim).*"
+        }, 
+        {
+            "attribute": "displacement", 
+            "colorspace": "Raw", 
+            "pattern": "$material_Height(.$udim).*"
+        }
+    ], 
+    "name": "VRay (3dsMax)", 
+    "renderer": "vray"
+}

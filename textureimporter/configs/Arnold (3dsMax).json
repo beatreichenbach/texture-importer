@@ -1,0 +1,36 @@
+{
+    "channels": [
+        {
+            "attribute": "base_color", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_BaseColor(.$udim).*"
+        }, 
+        {
+            "attribute": "metalness", 
+            "colorspace": "linear", 
+            "pattern": "$material_Metalness(.$udim).*"
+        }, 
+        {
+            "attribute": "specular_roughness", 
+            "colorspace": "linear", 
+            "pattern": "$material_Roughness(.$udim).*"
+        }, 
+        {
+            "attribute": "normal", 
+            "colorspace": "linear", 
+            "pattern": "$material_Normal(.$udim).*"
+        }, 
+        {
+            "attribute": "displacement", 
+            "colorspace": "linear", 
+            "pattern": "$material_Height(.$udim).*"
+        }, 
+        {
+            "attribute": "emission_color", 
+            "colorspace": "sRGB", 
+            "pattern": "$material_Emissive(.$udim).*"
+        }
+    ], 
+    "name": "Arnold (3dsMax)", 
+    "renderer": "arnold"
+}
