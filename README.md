@@ -68,6 +68,9 @@ The important settings for the user are listed under `[general]` or the current 
 `configs_path`: A custom path to store config files\
 `*_node_pattern`: The pattern that is used to label that node. For example `{}_mat` will become `chrome_mat` or `M_{}_001` will become `M_chrome_001`
 
+maya:
+`use_bump2d`: set this to true if you prefer the native bump2d node.
+
 ## Supported Features
 The tool is built with a plugin system to easily extend the functionality to different dccs and renderers. Here is a list of currently supported features.
 

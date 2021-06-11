@@ -18,6 +18,8 @@ def run():
 
 
 class Importer(importer.Importer):
+    display_name = ''
+    plugin_name = ''
     settings_group = 'maya'
     settings_defaults = {
         'material_node_pattern': '{}_mat',
@@ -59,6 +61,8 @@ class Importer(importer.Importer):
         return colorspaces
 
     def load_plugin(self):
+        if not self.plugin_name:
+            raise RuntimeError
         if not (cmds.pluginInfo(self.plugin_name, query=True, loaded=True)):
             cmds.loadPlugin(self.plugin_name)
 
@@ -83,8 +87,7 @@ class Importer(importer.Importer):
                 network.material_node_name, destination=True, source=False, type='shadingEngine')
             if outputs:
                 shadingengine_node = outputs[0]
-                set_members = cmds.listConnections(
-                    '{}.dagSetMembers'.format(shadingengine_node), destination=False, source=True)
+                set_members = cmds.sets(shadingengine_node, query=True)
 
         shadingengine_node_name = self.resolve_name('shadingengine_node_pattern', network.material_name)
         material_node, shadingengine_node = self.create_material(network.material_node_name, shadingengine_node_name)
@@ -204,6 +207,10 @@ class Importer(importer.Importer):
                 node = cmds.rename(node, name)
 
                 if on_conflict == 'remove':
+                    return node
+
+                if not out_connections:
+                    # ignore when old_node was not allowed to have connections
                     return node
 
                 for i in range(0, len(out_connections), 2):

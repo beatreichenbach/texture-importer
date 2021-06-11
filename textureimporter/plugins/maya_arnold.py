@@ -114,17 +114,35 @@ class Importer(maya.Importer):
     def connect_file(self, file_node, material_node, material_attribute):
         if material_attribute == 'normalCamera':
             normal_node_name = self.resolve_name('normal_node_pattern', self.current_network.material_name)
-            normal_node = self.create_node('aiNormalMap', name=normal_node_name, asUtility=True)
 
-            out_connection = '{}.outColor'.format(file_node)
-            in_connection = '{}.input'.format(normal_node)
-            cmds.connectAttr(out_connection, in_connection, force=True)
+            # some users like to use the maya node instead of the render specific node
+            if self.settings.value('maya/use_bump2d', False):
+                normal_node = self.create_node('bump2d', name=normal_node_name, asUtility=True)
+                cmds.setAttr('{}.bumpInterp'.format(normal_node), 1)
+                cmds.setAttr('{}.aiFlipR'.format(normal_node), 0)
+                cmds.setAttr('{}.aiFlipG'.format(normal_node), 0)
 
-            out_connection = '{}.outValue'.format(normal_node)
-            in_connection = '{}.{}'.format(material_node, material_attribute)
-            cmds.connectAttr(out_connection, in_connection, force=True)
+                out_connection = '{}.outAlpha'.format(file_node)
+                in_connection = '{}.bumpValue'.format(normal_node)
+                cmds.connectAttr(out_connection, in_connection, force=True)
+
+                out_connection = '{}.outNormal'.format(normal_node)
+                in_connection = '{}.{}'.format(material_node, material_attribute)
+                cmds.connectAttr(out_connection, in_connection, force=True)
+            else:
+                normal_node = self.create_node('aiNormalMap', name=normal_node_name, asUtility=True)
+
+                out_connection = '{}.outColor'.format(file_node)
+                in_connection = '{}.input'.format(normal_node)
+                cmds.connectAttr(out_connection, in_connection, force=True)
+
+                out_connection = '{}.outValue'.format(normal_node)
+                in_connection = '{}.{}'.format(material_node, material_attribute)
+                cmds.connectAttr(out_connection, in_connection, force=True)
+
         elif material_attribute == 'bump':
             bump_node = self.create_node('bump2d', asUtility=True)
+            material_attribute = 'normalCamera'
 
             out_connection = '{}.outAlpha'.format(file_node)
             in_connection = '{}.bumpValue'.format(bump_node)
