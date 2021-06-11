@@ -1,36 +1,36 @@
 {
+    "name": "VRay (3dsMax)",
+    "renderer": "vray",
     "channels": [
         {
-            "attribute": "diffuse", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_BaseColor(.$udim).*"
-        }, 
+            "attribute": "diffuse",
+            "pattern": "$material_BaseColor(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "metalness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Metallic(.$udim).*"
-        }, 
+            "attribute": "metalness",
+            "pattern": "$material_Metallic(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "reflectionRoughness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Roughness(.$udim).*"
-        }, 
+            "attribute": "reflectionRoughness",
+            "pattern": "$material_Roughness(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "normal", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Normal(.$udim).*"
-        }, 
+            "attribute": "normal",
+            "pattern": "$material_Normal(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "self_illumination", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_Emissive(.$udim).*"
-        }, 
+            "attribute": "self_illumination",
+            "pattern": "$material_Emissive(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "displacement", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Height(.$udim).*"
+            "attribute": "displacement",
+            "pattern": "$material_Height(.$udim).*",
+            "colorspace": "Raw"
         }
-    ], 
-    "name": "VRay (3dsMax)", 
-    "renderer": "vray"
+    ]
 }

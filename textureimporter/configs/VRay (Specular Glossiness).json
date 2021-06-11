@@ -1,36 +1,36 @@
 {
+    "name": "VRay (Specular Glossiness)",
+    "renderer": "vray",
     "channels": [
         {
-            "attribute": "color", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_Diffuse(.$udim).*"
-        }, 
+            "attribute": "color",
+            "pattern": "$material_Diffuse(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "reflectionColor", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Specular(.$udim).*"
-        }, 
+            "attribute": "reflectionColor",
+            "pattern": "$material_Specular(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "reflectionGlossiness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Glossiness(.$udim).*"
-        }, 
+            "attribute": "reflectionGlossiness",
+            "pattern": "$material_Glossiness(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "normalMap", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Normal(.$udim).*"
-        }, 
+            "attribute": "normalMap",
+            "pattern": "$material_Normal(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "illumColor", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_Emissive(.$udim).*"
-        }, 
+            "attribute": "illumColor",
+            "pattern": "$material_Emissive(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "displacement", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Height(.$udim).*"
+            "attribute": "displacement",
+            "pattern": "$material_Height(.$udim).*",
+            "colorspace": "Raw"
         }
-    ], 
-    "name": "VRay (Specular Glossiness)", 
-    "renderer": "vray"
+    ]
 }

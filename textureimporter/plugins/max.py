@@ -67,12 +67,28 @@ class Importer(importer.Importer):
             raise RuntimeError
 
     def get_meshes(self):
+        # force update scene materials
+        self.update_scene_materials()
+
         meshes = [Mesh(mesh) for mesh in rt.selection]
         return meshes
+
+    def get_material(self, material_name):
+        material = None
+        for scene_material in rt.sceneMaterials:
+            if scene_material.name == material_name:
+                material = scene_material
+                break
+        return material
 
     def exists(self, node_name):
         material_names = [mat.name for mat in rt.sceneMaterials]
         return node_name in material_names
+
+    def update_scene_materials(self):
+        temp_path = os.path.join(rt.GetDir(rt.name('temp')), 'textureimporter.max')
+        rt.saveNodes([], temp_path, quiet=True)
+        rt.deleteFile(temp_path)
 
     def create_network(self, network, **kwargs):
         self.current_network = network
@@ -82,7 +98,7 @@ class Importer(importer.Importer):
         set_members = []
         if kwargs.get('assign_material') and self.exists(network.material_node_name):
             # store material assignments
-            material = rt.getnodebyname(network.material_node_name)
+            material = self.get_material(network.material_node_name)
             material_dependents = rt.refs.dependents(material) or []
             set_members = [i for i in material_dependents if rt.superClassOf(i) == rt.GeometryClass]
 
@@ -132,11 +148,7 @@ class Importer(importer.Importer):
 
     def create_node(self, node_type, **kwargs):
         name = kwargs.get('name', '')
-        old_node = None
-        for material in rt.sceneMaterials:
-            if material.name == name:
-                old_node = material
-                break
+        old_node = self.get_material(name)
 
         node_cls = getattr(rt, node_type)
         node = node_cls(**kwargs)
@@ -161,33 +173,29 @@ class Importer(importer.Importer):
         elif on_conflict == 'replace':
             if old_node:
                 # Find outgoing nodes
-                parents = []
-                for dependent in list(rt.refs.dependents(old_node)):
-                    cls = rt.classOf(dependent)
-                    super_cls = rt.superClassOf(dependent)
-                    if (cls in [rt.Material_Editor] or
-                            super_cls in [rt.GeometryClass, rt.RendererClass, rt.Material]):
-                        parents.append(dependent)
+                for parent in list(rt.refs.dependents(old_node)):
+                    cls = rt.classOf(parent)
+                    super_cls = rt.superClassOf(parent)
 
-                # Find outgoing connections
-                for parent in parents:
+                    if not (super_cls in [rt.RendererClass, rt.Material]):
+                        continue
 
+                    # Find outgoing connections
                     attributes = list(rt.getPropNames(parent))
-                    if rt.superClassOf(parent) == rt.GeometryClass:
-                        attributes.append('material')
-                    for attribute in attributes:
+
+                    for i, attribute in enumerate(attributes):
                         try:
-                            attribute_name = str(attribute)
-                            value = rt.getProperty(parent, rt.Name(attribute_name))
+                            logging.debug('Connection: {}.{}'.format(parent, attribute))
+                            value = rt.getProperty(parent, attribute)
                             if rt.classOf(value) == rt.ArrayParameter:
                                 for i, list_value in enumerate(value):
                                     if list_value == old_node:
                                         value[i] = node
+
                             elif value == old_node:
-                                rt.setProperty(parent, attribute_name, node)
+                                rt.setProperty(parent, attribute, node)
                         except Exception:
                             pass
-
         return node
 
     def assign_material(self, material, meshes):

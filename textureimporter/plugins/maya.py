@@ -217,6 +217,16 @@ class Importer(importer.Importer):
                     source = out_connections[i]
                     destination = out_connections[i + 1]
 
+                    # Ignore connections to shading engines and only assign when checkbox is checked.
+                    cls = cmds.nodeType(destination)
+                    ignore_classes = [
+                        'shadingEngine',
+                        'defaultShaderList',
+                        'materialInfo',
+                        'nodeGraphEditorInfo']
+                    if cls in ignore_classes:
+                        continue
+
                     try:
                         # only connect if the attribute is valid and not already connected
                         valid_attr = source.split('.')[-1] not in ('message', 'partition')

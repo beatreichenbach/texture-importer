@@ -12,6 +12,7 @@ class NetworksWidget(QtWidgets.QWidget):
 
         self.networks = []
         self.settings = utils.Settings()
+        self.assign_checked = None
 
         self.init_ui()
 
@@ -43,6 +44,8 @@ class NetworksWidget(QtWidgets.QWidget):
         self.check_all_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Checked))
         self.check_none_btn.clicked.connect(lambda: self.networks_tree.check_all_items(QtCore.Qt.Unchecked))
         self.check_selected_btn.clicked.connect(lambda: self.networks_tree.check_selected_items(QtCore.Qt.Checked))
+
+        self.conflict_cmb.currentTextChanged.connect(self.conflict_changed)
 
         self.load_settings()
 
@@ -83,6 +86,15 @@ class NetworksWidget(QtWidgets.QWidget):
 
             self.networks.append(network)
         return self.networks
+
+    def conflict_changed(self):
+        if self.conflict_cmb.currentData() == 'replace':
+            self.assign_checked = self.assign_chk.isChecked()
+            self.assign_chk.setChecked(True)
+            self.assign_chk.setEnabled(False)
+        elif self.assign_checked is not None:
+            self.assign_chk.setChecked(self.assign_checked)
+            self.assign_chk.setEnabled(True)
 
 
 class SortTreeWidgetItem(QtWidgets.QTreeWidgetItem):

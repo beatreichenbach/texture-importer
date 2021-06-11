@@ -1,36 +1,36 @@
 {
+    "name": "VRay (Metalness Roughness)",
+    "renderer": "vray",
     "channels": [
         {
-            "attribute": "color", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_BaseColor(.$udim).*"
-        }, 
+            "attribute": "color",
+            "pattern": "$material_BaseColor(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "metalness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Metallic(.$udim).*"
-        }, 
+            "attribute": "metalness",
+            "pattern": "$material_Metallic(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "reflectionRoughness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Roughness(.$udim).*"
-        }, 
+            "attribute": "reflectionRoughness",
+            "pattern": "$material_Roughness(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "normalMap", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Normal(.$udim).*"
-        }, 
+            "attribute": "normalMap",
+            "pattern": "$material_Normal(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "illumColor", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_Emissive(.$udim).*"
-        }, 
+            "attribute": "illumColor",
+            "pattern": "$material_Emissive(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "displacement", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Height(.$udim).*"
+            "attribute": "displacement",
+            "pattern": "$material_Height(.$udim).*",
+            "colorspace": "Raw"
         }
-    ], 
-    "name": "VRay (Metalness Roughness)", 
-    "renderer": "vray"
+    ]
 }

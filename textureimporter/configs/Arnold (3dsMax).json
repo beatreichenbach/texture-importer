@@ -1,36 +1,36 @@
 {
+    "name": "Arnold (3dsMax)",
+    "renderer": "arnold",
     "channels": [
         {
-            "attribute": "base_color", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_BaseColor(.$udim).*"
-        }, 
+            "attribute": "base_color",
+            "pattern": "$material_BaseColor(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "metalness", 
-            "colorspace": "linear", 
-            "pattern": "$material_Metalness(.$udim).*"
-        }, 
+            "attribute": "metalness",
+            "pattern": "$material_Metalness(.$udim).*",
+            "colorspace": "linear"
+        },
         {
-            "attribute": "specular_roughness", 
-            "colorspace": "linear", 
-            "pattern": "$material_Roughness(.$udim).*"
-        }, 
+            "attribute": "specular_roughness",
+            "pattern": "$material_Roughness(.$udim).*",
+            "colorspace": "linear"
+        },
         {
-            "attribute": "normal", 
-            "colorspace": "linear", 
-            "pattern": "$material_Normal(.$udim).*"
-        }, 
+            "attribute": "normal",
+            "pattern": "$material_Normal(.$udim).*",
+            "colorspace": "linear"
+        },
         {
-            "attribute": "displacement", 
-            "colorspace": "linear", 
-            "pattern": "$material_Height(.$udim).*"
-        }, 
+            "attribute": "displacement",
+            "pattern": "$material_Height(.$udim).*",
+            "colorspace": "linear"
+        },
         {
-            "attribute": "emission_color", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_Emissive(.$udim).*"
+            "attribute": "emission_color",
+            "pattern": "$material_Emissive(.$udim).*",
+            "colorspace": "sRGB"
         }
-    ], 
-    "name": "Arnold (3dsMax)", 
-    "renderer": "arnold"
+    ]
 }

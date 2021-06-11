@@ -1,36 +1,36 @@
 {
+    "name": "Arnold",
+    "renderer": "arnold",
     "channels": [
         {
-            "attribute": "baseColor", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_BaseColor(.$udim).*"
-        }, 
+            "attribute": "baseColor",
+            "pattern": "$material_BaseColor(.$udim).*",
+            "colorspace": "sRGB"
+        },
         {
-            "attribute": "metalness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Metalness(.$udim).*"
-        }, 
+            "attribute": "metalness",
+            "pattern": "$material_Metalness(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "specularRoughness", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Roughness(.$udim).*"
-        }, 
+            "attribute": "specularRoughness",
+            "pattern": "$material_Roughness(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "normalCamera", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Normal(.$udim).*"
-        }, 
+            "attribute": "normalCamera",
+            "pattern": "$material_Normal(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "displacement", 
-            "colorspace": "Raw", 
-            "pattern": "$material_Height(.$udim).*"
-        }, 
+            "attribute": "displacement",
+            "pattern": "$material_Height(.$udim).*",
+            "colorspace": "Raw"
+        },
         {
-            "attribute": "emissionColor", 
-            "colorspace": "sRGB", 
-            "pattern": "$material_Emissive(.$udim).*"
+            "attribute": "emissionColor",
+            "pattern": "$material_Emissive(.$udim).*",
+            "colorspace": "sRGB"
         }
-    ], 
-    "name": "Arnold", 
-    "renderer": "arnold"
+    ]
 }

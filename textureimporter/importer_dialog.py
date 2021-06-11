@@ -130,9 +130,6 @@ class ImporterDialog(QtWidgets.QDialog):
         self.footer_lay.setStretch(0, 1)
         self.footer_lay.setStretch(1, 0)
 
-        self.setStyleSheet('QGroupBox {border: 1px solid red; margins: 10px; padding: 10px;}')
-        self.setStyleSheet('QLayout {margins: 10 10 10 10; padding: 10;}')
-
     def connect_ui(self):
         self.path_browse_btn.clicked.connect(self.browse_path)
         self.config_cmb.currentTextChanged.connect(self.config_changed)
