@@ -6,13 +6,13 @@ import shutil
 
 from PySide2 import QtWidgets, QtCore, QtGui
 
-import importer
-import networks_dialog
-import gui_utils
-import plugin_utils
-import utils
-from utils import NotFoundException, NoSelectionException
-import setup
+from . import importer
+from . import networks_dialog
+from . import gui_utils
+from . import plugin_utils
+from . import utils
+from .utils import NotFoundException, NoSelectionException
+from . import setup
 
 
 class ImporterDialog(QtWidgets.QDialog):
@@ -129,6 +129,9 @@ class ImporterDialog(QtWidgets.QDialog):
         self.footer_lay.insertWidget(0, self.status_bar)
         self.footer_lay.setStretch(0, 1)
         self.footer_lay.setStretch(1, 0)
+
+        self.setStyleSheet('QGroupBox {border: 1px solid red; margins: 10px; padding: 10px;}')
+        self.setStyleSheet('QLayout {margins: 10 10 10 10; padding: 10;}')
 
     def connect_ui(self):
         self.path_browse_btn.clicked.connect(self.browse_path)
@@ -318,7 +321,8 @@ class ImporterDialog(QtWidgets.QDialog):
             'assign_material': self.networks_wdg.assign_chk.isChecked()
         }
 
-        for network in networks:
+        for i, network in enumerate(networks):
+            kwargs['index'] = i
             self.importer.create_network(network, **kwargs)
 
         self.status_bar.showMessage('Successfully created all shading networks', 2000)

@@ -17,8 +17,8 @@ try:
     from textureimporter import plugin_utils
     from textureimporter import utils
 except ImportError:
-    import plugin_utils
-    import utils
+    from . import plugin_utils
+    from . import utils
 
 
 class Installer(object):
@@ -76,8 +76,11 @@ class Installer(object):
             sys.path.insert(1, installer_path)
             try:
                 utils.unload_modules()
+                logging.debug('Loading temp setup module.')
                 from textureimporter import setup
+                logging.debug('Installing from temp directory.')
                 setup.Installer.install(self.dcc)
+                logging.debug('Deleting setup module.')
                 del setup
             except Exception as e:
                 raise e
@@ -85,7 +88,7 @@ class Installer(object):
                 sys.path.remove(installer_path)
 
         except Exception as e:
-            logging.error(e)
+            logging.error(e.format_exc())
             logging.error('Update failed. Please see log.')
             return False
         finally:

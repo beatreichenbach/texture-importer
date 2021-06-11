@@ -36,6 +36,7 @@ class Importer(importer.Importer):
     @property
     def attributes(self):
         '''
+        from maya import cmds
         material_node = cmds.shadingNode('lambert', asShader=True)
         attrs = cmds.listAttr(material_node, write=True, connectable=True)
         attrs = [attr for attr in attrs if attr[-1] not in ['R', 'G', 'B', 'X', 'Y', 'Z']]
@@ -112,8 +113,7 @@ class Importer(importer.Importer):
         cmds.select(selection, replace=True)
         if kwargs.get('assign_material'):
             if set_members:
-                for set_member in set_members:
-                    self.assign_material(material_node, set_member)
+                self.assign_material(material_node, set_members)
             elif network.mesh:
                 self.assign_material(material_node, network.mesh)
             else:
@@ -227,11 +227,11 @@ class Importer(importer.Importer):
                         pass
         return node
 
-    def assign_material(self, material, mesh):
+    def assign_material(self, material, meshes):
         logging.debug('assign_material')
         selection = cmds.ls(selection=True)
-        cmds.select(mesh, replace=True)
-        logging.debug(mesh)
+        cmds.select(meshes, replace=True)
+        logging.debug(meshes)
         if cmds.ls(selection=True):
             cmds.hyperShade(assign=material)
         cmds.select(selection, replace=True)

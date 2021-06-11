@@ -5,9 +5,10 @@ import logging
 import itertools
 import json
 
-import plugin_utils
-import utils
-from utils import NotFoundException, NoSelectionException
+
+from . import plugin_utils
+from . import utils
+from .utils import NotFoundException, NoSelectionException
 
 
 class Importer(object):
@@ -45,7 +46,7 @@ class Importer(object):
     def load_plugin(self):
         pass
 
-    def resolve_pattern(self, pattern, mesh='*', material='*', udim='[0-9][0-9][0-9][0-9]'):
+    def resolve_pattern(self, pattern, mesh='*', material='*', udim='[0-9][0-9][0-9][0-9]', mud='_u'):
         # turn parantheses into optional groups in regex style
         pattern = re.sub(r'\(([^\|]+?)\)', r'(\g<1>|)', pattern)
 
