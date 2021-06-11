@@ -2,6 +2,7 @@ import sys
 from PySide2 import QtWidgets
 import logging
 import os
+import re
 
 from textureimporter import importer_dialog
 from .. import importer
@@ -54,18 +55,13 @@ class Importer(importer.Importer):
 
     @property
     def colorspaces(self):
-        colorspaces = [
-            'auto',
-            'linear',
-            'sRGB',
-            'Rec709',
-        ]
+        colorspaces = []
 
         return colorspaces
 
     def load_plugin(self):
         for renderer in rt.rendererClass.classes:
-            if str(renderer) == self.plugin_name:
+            if self.plugin_name in str(renderer):
                 return
         else:
             raise RuntimeError
@@ -75,7 +71,8 @@ class Importer(importer.Importer):
         return meshes
 
     def exists(self, node_name):
-        return node_name in rt.scenematerials
+        material_names = [mat.name for mat in rt.sceneMaterials]
+        return node_name in material_names
 
     def create_network(self, network, **kwargs):
         self.current_network = network
@@ -86,7 +83,7 @@ class Importer(importer.Importer):
         if kwargs.get('assign_material') and self.exists(network.material_node_name):
             # store material assignments
             material = rt.getnodebyname(network.material_node_name)
-            material_dependents = rt.refs.dependents(material)
+            material_dependents = rt.refs.dependents(material) or []
             set_members = [i for i in material_dependents if rt.superClassOf(i) == rt.GeometryClass]
 
         material_node = self.create_material(network.material_node_name)
@@ -131,45 +128,73 @@ class Importer(importer.Importer):
         return file_node
 
     def connect_file(self, file_node, material_node, material_attribute):
-        setattr(material_node, material_attribute, file_node)
+        rt.setProperty(material_node, material_attribute, file_node)
 
     def create_node(self, node_type, **kwargs):
         name = kwargs.get('name', '')
-        old_node = rt.getnodebyname(name)
+        old_node = None
+        for material in rt.sceneMaterials:
+            if material.name == name:
+                old_node = material
+                break
 
         node_cls = getattr(rt, node_type)
         node = node_cls(**kwargs)
 
         on_conflict = self.current_kwargs.get('on_conflict')
-        if on_conflict in ('replace', 'remove'):
+        if on_conflict == 'rename':
+            # prevent infinite loop
+            for i in range(100):
+                digit = 0
+                old_name = name
+                match = re.search(r'(.*?)(\d+)$', name)
+                if match:
+                    digit = int(match.group(2))
+                    old_name = match.group(1)
+
+                new_name = '{}{:03d}'.format(old_name, digit)
+                if not self.exists(new_name):
+                    node.name = new_name
+                    break
+        elif on_conflict == 'remove':
+            pass
+        elif on_conflict == 'replace':
             if old_node:
+                # Find outgoing nodes
+                parents = []
+                for dependent in list(rt.refs.dependents(old_node)):
+                    cls = rt.classOf(dependent)
+                    super_cls = rt.superClassOf(dependent)
+                    if (cls in [rt.Material_Editor] or
+                            super_cls in [rt.GeometryClass, rt.RendererClass, rt.Material]):
+                        parents.append(dependent)
 
-                # out_connections = cmds.listConnections(
-                #     old_node, destination=True, source=False, connections=True, plugs=True)
-                # cmds.delete(old_node)
+                # Find outgoing connections
+                for parent in parents:
 
-                if on_conflict == 'remove':
-                    return node
+                    attributes = list(rt.getPropNames(parent))
+                    if rt.superClassOf(parent) == rt.GeometryClass:
+                        attributes.append('material')
+                    for attribute in attributes:
+                        try:
+                            attribute_name = str(attribute)
+                            value = rt.getProperty(parent, rt.Name(attribute_name))
+                            if rt.classOf(value) == rt.ArrayParameter:
+                                for i, list_value in enumerate(value):
+                                    if list_value == old_node:
+                                        value[i] = node
+                            elif value == old_node:
+                                rt.setProperty(parent, attribute_name, node)
+                        except Exception:
+                            pass
 
-                # for i in range(0, len(out_connections), 2):
-                #     source = out_connections[i]
-                #     destination = out_connections[i + 1]
-
-                #     try:
-                #         # only connect if the attribute is valid and not already connected
-                #         valid_attr = source.split('.')[-1] not in ('message', 'partition')
-                #         not_connected = not cmds.isConnected(source, destination)
-                #         if valid_attr and not_connected:
-                #             cmds.connectAttr(source, destination, force=True)
-                #     except (RuntimeError, ValueError):
-                #         pass
         return node
 
     def assign_material(self, material, meshes):
         if not isinstance(meshes, list):
             meshes = [meshes]
         for mesh in meshes:
-            mesh.mat = material
+            mesh.material = material
 
 
 class Mesh(importer.Mesh):
@@ -197,7 +222,7 @@ class Installer(setup.Installer):
         rt.execute(macroscript)
 
     def install_package(self):
-        scripts_path = rt.getDir(pymxs.runtime.Name('userScripts')) or ''
+        scripts_path = rt.getDir(rt.Name('userScripts')) or ''
         scripts_path = os.path.normpath(scripts_path)
 
         if not scripts_path:

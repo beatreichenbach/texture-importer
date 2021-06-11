@@ -20,7 +20,8 @@ class Importer(max.Importer):
         rt = pymxs.runtime
         mat = rt.ai_standard_surface()
         for prop in rt.getPropNames(mat):
-            if '_shader' in str(prop):
+            prop = str(prop)
+            if '_shader' in prop:
                 print(prop.replace('_shader', ''))
         '''
 
@@ -83,6 +84,17 @@ class Importer(max.Importer):
             ])
 
         return attrs
+
+    @property
+    def colorspaces(self):
+        colorspaces = [
+            'auto',
+            'linear',
+            'sRGB',
+            'Rec709'
+        ]
+
+        return colorspaces
 
     def create_material(self, material_node_name):
         material_node = self.create_node('ai_standard_surface', name=material_node_name)
