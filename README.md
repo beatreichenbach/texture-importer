@@ -12,7 +12,20 @@ Using customizable presets the tool searches a path for texture files and create
 If preferred the package can be installed manually by moving the textureimporter directory into a location where it can be loaded as a python package by maya. The tool can then be ran with the following code:
 ```
 from textureimporter.plugins.maya import run
-main_window = run()
+window = run()
+```
+
+## Installation for 3dsMax
+1. Click on the code button above and download the package as a .zip file.
+2. Unpack the zip archive.
+3. Drag the setup_max.ms file into the viewport of 3dsMax.
+4. This adds a macro script to 3dsMax that can be added to a toolbar through the Customize UI menu.
+5. The action 'Texture Importer' can be found in the 'Plugins' category. See the [documentation](https://help.autodesk.com/view/3DSMAX/2022/ENU/?guid=GUID-A2CF8BAA-7B52-40A8-8C40-803B1AB5FC05m) for more information.
+
+If preferred the package can be installed manually by moving the textureimporter directory into a location where it can be loaded as a python package by 3ds Max. The tool can then be ran with the following code:
+```
+from textureimporter.plugins.max import run
+window = run()
 ```
 
 ## Getting Started
@@ -76,16 +89,15 @@ The tool is built with a plugin system to easily extend the functionality to dif
 
 ### DCCs
 - [x] Maya
-- [ ] 3ds Max
-- [ ] Blender
+- [x] 3ds Max
 
 ### Renderer
 - [x] maya-arnold
 - [x] maya-vray
 - [x] maya-redshift
 - [ ] maya-renderman
-- [ ] max-arnold
-- [ ] max-vray
+- [x] max-arnold
+- [x] max-vray
 
 ### Texture Formats
 - [x] Substance Painter
