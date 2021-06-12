@@ -218,7 +218,10 @@ class Importer(importer.Importer):
                     destination = out_connections[i + 1]
 
                     # Ignore connections to shading engines and only assign when checkbox is checked.
-                    cls = cmds.nodeType(destination)
+                    destination_node = destination.split('.')[0]
+                    if not cmds.objExists(destination_node):
+                        continue
+                    cls = cmds.nodeType(destination_node)
                     ignore_classes = [
                         'shadingEngine',
                         'defaultShaderList',
