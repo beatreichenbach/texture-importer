@@ -230,7 +230,7 @@ class ImporterDialog(QtWidgets.QDialog):
 
     def save_config_file(self, config):
         name = config.name
-        filename = re.sub(r'[^\W-\.]', '_', name)
+        filename = re.sub(r'[\W\-\.]', '_', name)
 
         path = os.path.join(self.settings.configs_path, '{}.json'.format(filename))
         config.to_json(path)
@@ -244,6 +244,8 @@ class ImporterDialog(QtWidgets.QDialog):
 
     def browse_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(dir=self.path_cmb.currentText())
+
+        path = os.path.abspath(path)
 
         if path:
             self.path_cmb.setCurrentText(path)
