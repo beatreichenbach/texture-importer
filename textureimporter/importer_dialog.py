@@ -596,7 +596,8 @@ class ListItem(QtWidgets.QWidget):
         self.widget_layout.addWidget(self.widget)
 
         self.delete_btn = QtWidgets.QPushButton()
-        self.delete_btn.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_TitleBarCloseButton))
+        icon = QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_TitleBarCloseButton)
+        self.delete_btn.setIcon(icon)
         self.delete_btn.setFlat(True)
         self.delete_btn.setFixedWidth(20)
         self.delete_btn.setFixedHeight(20)
