@@ -123,7 +123,9 @@ class Importer(object):
             patterns = self.resolve_pattern(channel.pattern, mesh=mesh, material=r'(\\w+?)')
             for (pattern, filepath) in itertools.product(patterns, filepaths):
                 # if we found a material add it to the list and create a network
-                match = re.search(pattern, filepath)
+                # resolve_pattern returns a glob pattern. We need to escape .* to make it work for regex.
+                regex_pattern = pattern.replace('.', r'\.').replace('*', r'\w+')
+                match = re.search(regex_pattern, filepath)
                 if match and match.group(1) not in materials:
                     material = match.group(1)
                     materials.append(material)
@@ -277,12 +279,13 @@ class Config(object):
     def from_json(cls, json_path):
         try:
             with open(json_path) as f:
-                name, extension = os.path.splitext(os.path.basename(json_path))
+                filename, extension = os.path.splitext(os.path.basename(json_path))
                 data = json.load(f)
         except (ValueError, TypeError):
             logging.error('Could not import the config: {}'.format(json_path))
             return
 
+        name = data.get('name', filename)
         config = cls(name)
 
         config.renderer = data.get('renderer')

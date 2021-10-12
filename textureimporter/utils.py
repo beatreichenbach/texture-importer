@@ -3,6 +3,7 @@ import logging
 import json
 from PySide2 import QtWidgets, QtCore, QtGui
 import sys
+import re
 
 
 def join_url(url, *urls):
@@ -93,8 +94,3 @@ class NoSelectionException(Exception):
 
 class NotFoundException(Exception):
     message = 'Not found.'
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    settings = Settings()

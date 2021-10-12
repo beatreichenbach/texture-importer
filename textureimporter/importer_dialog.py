@@ -173,7 +173,7 @@ class ImporterDialog(QtWidgets.QDialog):
         config.name = name
 
         self._configs[name] = config
-        self.save_config_files()
+        self.save_config_file(config)
         self.update_config_cmb()
         self.config_cmb.setCurrentText(name)
 
@@ -228,13 +228,14 @@ class ImporterDialog(QtWidgets.QDialog):
         self.config_cmb.setCurrentIndex(-1)
         self.config_cmb.blockSignals(False)
 
-    def save_config_files(self):
-        for name, config in self._configs.items():
-            path = os.path.join(self.settings.configs_path, '{}.json'.format(name))
-            config.to_json(path)
+    def save_config_file(self, config):
+        name = config.name
+        filename = re.sub(r'[^\W-\.]', '_', name)
+
+        path = os.path.join(self.settings.configs_path, '{}.json'.format(filename))
+        config.to_json(path)
 
     def load_config_files(self):
-        # handle broken ass json files
         self._configs = {}
         for path in glob.glob(os.path.join(self.settings.configs_path, '*.json')):
             config = importer.Config.from_json(path)
