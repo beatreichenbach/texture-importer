@@ -119,16 +119,17 @@ class Importer(max.Importer):
     @property
     def colorspaces(self):
         colorspaces = [
+            'Raw',
             'Default',
             'sRGB',
-            'ACEScg',
-            'Raw'
+            'From 3ds max',
         ]
 
         return colorspaces
 
     def create_material(self, material_node_name):
         material_node = self.create_node('VrayMtl', name=material_node_name)
+        material_node.reflection = rt.Color(255, 255, 255)
         return material_node
 
     def create_file(self, name, file_path, colorspace):
