@@ -37,7 +37,7 @@ window = run()
 6. Create the material networks.
 
 ![Textureimporter Dialog](images/textureimporter_dialog.jpg)
-![Textureimporter Material Network](images/textureimporter_may_network.jpg)
+![Textureimporter Material Network](images/textureimporter_maya_network.jpg)
 
 ## Configs
 Configs are presets that store different patterns for texture names. Configs can be organized in the menu next to the Save button and are available as .json files in the File menu. When importing textures from Substance Painter for example, just copy the same preset that is used there. Each config has a renderer associated with it and a set of channels that correspond to attributes on a material.
