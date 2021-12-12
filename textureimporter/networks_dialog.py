@@ -198,29 +198,3 @@ class NetworksTreeWidget(QtWidgets.QTreeWidget):
         for i in range(self.header().count()):
             self.resizeColumnToContents(i)
         self.collapseAll()
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    import importer
-
-    network = importer.Network()
-    network.mesh_name = None
-    network.material_name = 'Default'
-    network.material_node_name = 'Default_mat'
-
-    for i in range(3):
-        network_channel = importer.NetworkChannel(network)
-        network_channel.attribute_name = 'baseColor'
-        network_channel.file_node_name = 'Default_baseColor_tex'
-        network_channel.file_path = 'C:/Users/Beat/Desktop/textures/Default_baseColor.<UDIM>.png'
-
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    dialog = NetworksWidget()
-    dialog.networks_tree.add_network(network)
-    dialog.networks_tree.add_network(network)
-    dialog.show()
-    sys.exit(app.exec_())
-
-    # show(NetworksWidget)

@@ -241,10 +241,8 @@ class Importer(importer.Importer):
         return node
 
     def assign_material(self, material, meshes):
-        logging.debug('assign_material')
         selection = cmds.ls(selection=True)
         cmds.select(meshes, replace=True)
-        logging.debug(meshes)
         if cmds.ls(selection=True):
             cmds.hyperShade(assign=material)
         cmds.select(selection, replace=True)

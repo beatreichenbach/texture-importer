@@ -2,12 +2,12 @@
 	"folders":
 	[
 		{
-			"path": ".",
 			"folder_exclude_patterns":
 			[
 				".git",
 				"__pycache__"
-			]
+			],
+			"path": "."
 		}
-	],
+	]
 }

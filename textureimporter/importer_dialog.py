@@ -20,6 +20,8 @@ class ImporterDialog(QtWidgets.QDialog):
         super(ImporterDialog, self).__init__(parent)
 
         self.setObjectName('ImporterDialog')
+        self.setWindowTitle('Texture Importer')
+
         self.dcc = dcc
         self.settings = utils.Settings()
 
@@ -71,6 +73,7 @@ class ImporterDialog(QtWidgets.QDialog):
         self.config_btn.setMenu(menu)
 
         if self.dcc == 'maya':
+            # workaround for how maya treats ToolButton
             frame = QtWidgets.QFrame()
             frame.setParent(self)
             frame.setContentsMargins(0, 0, 0, 0)
@@ -140,7 +143,6 @@ class ImporterDialog(QtWidgets.QDialog):
         self.cancel_btn.clicked.connect(self.reject)
 
     def config_changed(self, text=None):
-        logging.debug(('config_changed', text))
         if text is None:
             text = self.config_cmb.currentText()
         if not text:
@@ -162,7 +164,6 @@ class ImporterDialog(QtWidgets.QDialog):
             self.save_config(name)
 
     def save_config(self, name=''):
-        logging.debug(('save_config', name))
         if not name:
             name = self.config_cmb.currentText()
             if not name:
@@ -213,7 +214,6 @@ class ImporterDialog(QtWidgets.QDialog):
             self.config_cmb.setCurrentIndex(0)
 
     def load_config(self, name):
-        logging.debug(('load_config', name))
         config = self._configs.get(name)
         if not config:
             return
@@ -332,12 +332,10 @@ class ImporterDialog(QtWidgets.QDialog):
         super(ImporterDialog, self).reject()
 
     def closeEvent(self, event):
-        logging.debug('closeEvent')
         self.save_settings()
         event.accept()
 
     def save_settings(self):
-        logging.debug('save_settings')
         self.settings.setValue('importer_dialog/pos', self.pos())
         self.settings.setValue('importer_dialog/size', self.size())
         self.settings.setValue('importer_dialog/splitter', self.splitter.sizes())
@@ -347,7 +345,6 @@ class ImporterDialog(QtWidgets.QDialog):
         self.settings.setValue('importer/assign_materials', self.networks_wdg.assign_chk.isChecked())
 
     def load_settings(self):
-        logging.debug('load_settings')
         if self.settings.value('importer_dialog/pos'):
             self.move(self.settings.value('importer_dialog/pos'))
         if self.settings.value('importer_dialog/size'):
@@ -400,8 +397,6 @@ class ImporterDialog(QtWidgets.QDialog):
             filter='Configs (*.json)')
         if not path:
             return
-
-        logging.debug(path)
 
         file_name = os.path.basename(path)
         config_path = os.path.join(self.settings.configs_path, file_name)
@@ -510,7 +505,6 @@ class ListWidget(QtWidgets.QWidget):
         self.repaint()
 
     def dragEnterEvent(self, event):
-        logging.debug('dragEnterEvent')
         source = event.source()
         if not source:
             return
@@ -614,9 +608,7 @@ class ListItem(QtWidgets.QWidget):
         return QtCore.QRect(10, 10, 10, self.height() - 20)
 
     def mousePressEvent(self, event):
-        logging.debug('mousePressEvent')
         if event.button() == QtCore.Qt.LeftButton and self.dragDropRect().contains(event.pos()):
-            logging.debug('drag')
 
             pixmap = self.grab()
             pixmap_transparent = QtGui.QPixmap(pixmap.size())
@@ -772,7 +764,6 @@ class ConfigWidget(QtWidgets.QWidget):
     def renderer_changed(self, text=None):
         renderer = self.renderer_cmb.currentData()
         if renderer:
-            logging.debug('renderer_changed')
             plugin = '{}_{}'.format(self.dcc, renderer)
             self.importer = importer.Importer.from_plugin(plugin)
 
@@ -798,8 +789,6 @@ class ConfigWidget(QtWidgets.QWidget):
 
     @property
     def config(self):
-        logging.debug('get_config')
-
         config = importer.Config()
         config.renderer = self.renderer_cmb.currentData()
         config.channels = [item.widget.channel for item in self.list_wdg.items()]
@@ -808,8 +797,6 @@ class ConfigWidget(QtWidgets.QWidget):
 
     @config.setter
     def config(self, config):
-        logging.debug(('set_config', config.name))
-
         self.reset_config()
         if config.renderer:
             if self.renderer_cmb.findText(config.renderer.title()) == -1:
@@ -824,8 +811,3 @@ class ConfigWidget(QtWidgets.QWidget):
         # making sure to trigger renderer_changed
         self.renderer_cmb.setCurrentIndex(-1)
         self.list_wdg.clear()
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    gui_utils.show(ImporterDialog)

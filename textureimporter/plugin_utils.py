@@ -58,7 +58,3 @@ def plugin_class(cls, plugin):
             'Could not find plugin: "{}{}" '
             'Using base class instead.'.format(package, plugin))
     return cls
-
-
-if __name__ == '__main__':
-    logging.error(plugins.__path__)

@@ -135,8 +135,3 @@ class Installer(object):
             # For python 2.7 only, see above.
             if 'tmp_dir' in locals():
                 shutil.rmtree(tmp_dir)
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    installer_ = Installer()

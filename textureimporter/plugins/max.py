@@ -185,7 +185,6 @@ class Importer(importer.Importer):
 
                     for i, attribute in enumerate(attributes):
                         try:
-                            logging.debug('Connection: {}.{}'.format(parent, attribute))
                             value = rt.getProperty(parent, attribute)
                             if rt.classOf(value) == rt.ArrayParameter:
                                 for i, list_value in enumerate(value):

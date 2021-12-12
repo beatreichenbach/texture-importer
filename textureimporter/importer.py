@@ -336,8 +336,3 @@ class Mesh(object):
     @property
     def name(self):
         return str(self.mesh)
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    importer = Importer.from_plugin('maya-arnold')
